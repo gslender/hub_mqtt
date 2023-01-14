@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -23,6 +24,7 @@ class HubMQTT extends StatefulWidget {
 }
 
 class _HubMQTTState extends State<HubMQTT> {
+  int appStatus = 0;
   String buttonTitleState = 'RECONNECT';
   final TextEditingController hostname =
       TextEditingController(text: '192.168.1.110');
@@ -80,16 +82,32 @@ class _HubMQTTState extends State<HubMQTT> {
               ),
             ],
           ),
-          const Spacer()
+          const Divider(),
+          Expanded(child: _deviceListProgress()),
         ],
       ),
     );
+  }
+
+  Widget _deviceListProgress() {
+    switch (appStatus) {
+      case 1:
+        return const Center(child: CircularProgressIndicator());
+      case 2:
+        return ListView.builder(itemBuilder: (_, __) {});
+      default:
+        return Container();
+    }
   }
 
   _queryMQTT() {
     debugPrint('_queryMQTT ${hostname.text} ${username.text} ${password.text}');
     final client = MqttServerClient(hostname.text, widget.title);
     client.logging(on: true);
+    client.secure = true;
     client.connect(username.text, password.text);
+    setState(() {
+      appStatus = 1;
+    });
   }
 }
