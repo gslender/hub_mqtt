@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
 const String apptitle = 'HUB-MQTT';
@@ -91,6 +92,8 @@ class _HubMQTTState extends State<HubMQTT> {
 
   Widget _deviceListProgress() {
     switch (appStatus) {
+      case -1:
+        return const Center(child: Text('CONNECTION ERROR - NOT AUTHORISED!'));
       case 1:
         return const Center(child: CircularProgressIndicator());
       case 2:
@@ -104,10 +107,31 @@ class _HubMQTTState extends State<HubMQTT> {
     debugPrint('_queryMQTT ${hostname.text} ${username.text} ${password.text}');
     final client = MqttServerClient(hostname.text, widget.title);
     client.logging(on: true);
-    client.secure = true;
-    client.connect(username.text, password.text);
-    setState(() {
-      appStatus = 1;
+    // client.secure = true; // does not work and peer resets connection
+    client.connect(username.text, password.text).then((status) {
+      debugPrint('_queryMQTT MqttClientConnectionStatus=$status');
+      if (status == null) return;
+      switch (status.state) {
+        case MqttConnectionState.faulted:
+        case MqttConnectionState.disconnecting:
+        case MqttConnectionState.disconnected:
+          break;
+        case MqttConnectionState.connecting:
+        case MqttConnectionState.connected:
+          setState(() {
+            appStatus = 1;
+          });
+          break;
+      }
+    }, onError: (_) {
+      var connectionStatus = client.connectionStatus;
+      debugPrint('_queryMQTT $connectionStatus');
+      if (connectionStatus == null) return;
+      if (connectionStatus.returnCode == MqttConnectReturnCode.notAuthorized) {
+        setState(() {
+          appStatus = -1;
+        });
+      }
     });
   }
 }
