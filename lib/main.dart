@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/enums.dart';
+import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -27,19 +28,20 @@ class HubMQTT extends StatefulWidget {
 
 class _HubMQTTState extends State<HubMQTT> {
   AppStatus appStatus = AppStatus.none;
-  String buttonTitleState = 'RECONNECT';
   final TextEditingController hostname = TextEditingController(text: '192.168.1.110');
   final TextEditingController username = TextEditingController(text: '');
   final TextEditingController password = TextEditingController(text: '');
+  final List<MqttDevice> _devices = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
-          IconButton(
+          ElevatedButton.icon(
             icon: const Icon(Icons.restart_alt),
-            tooltip: buttonTitleState,
+            label: Text('Discover'.toUpperCase()),
             onPressed: () => _queryMQTT(),
           ),
         ],
@@ -90,6 +92,14 @@ class _HubMQTTState extends State<HubMQTT> {
     );
   }
 
+  Widget _mqttDeviceListItem(MqttDevice device) {
+    return Card(
+      child: ListTile(
+        title: Text(device.name),
+      ),
+    );
+  }
+
   Widget _deviceListProgress() {
     switch (appStatus) {
       case AppStatus.failed:
@@ -99,7 +109,11 @@ class _HubMQTTState extends State<HubMQTT> {
       case AppStatus.connecting:
         return const Center(child: CircularProgressIndicator());
       case AppStatus.connected:
-        return ListView.builder(itemBuilder: (_, __) {});
+        return ListView.builder(
+            itemCount: _devices.length,
+            itemBuilder: (context, index) {
+              return _mqttDeviceListItem(_devices[index]);
+            });
       case AppStatus.none:
       default:
         return Container();
@@ -127,6 +141,7 @@ class _HubMQTTState extends State<HubMQTT> {
         case MqttConnectionState.connected:
           setState(() {
             appStatus = AppStatus.connected;
+            _devices.clear();
           });
 
           client.subscribe('homeassistant/#', MqttQos.atMostOnce);
@@ -136,10 +151,15 @@ class _HubMQTTState extends State<HubMQTT> {
           client.publishMessage('homeassistant/status', MqttQos.exactlyOnce, builder.payload!);
 
           client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-            final recMess = c![0].payload as MqttPublishMessage;
-            final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+            if (c == null) return;
+            final MqttReceivedMessage msg = c.first;
+            final publishMessage = msg.payload as MqttPublishMessage;
+            final config = MqttPublishPayload.bytesToStringAsString(publishMessage.payload.message);
 
-            debugPrint('_queryMQTT payload=$pt');
+            // debugPrint('_queryMQTT payload=$pt');
+            setState(() {
+              _devices.add(MqttDevice.fromTopicConfig(topic: msg.topic, config: config));
+            });
           });
           break;
       }
