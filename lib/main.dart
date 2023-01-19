@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:hub_mqtt/enums.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -25,10 +26,9 @@ class HubMQTT extends StatefulWidget {
 }
 
 class _HubMQTTState extends State<HubMQTT> {
-  int appStatus = 0;
+  AppStatus appStatus = AppStatus.none;
   String buttonTitleState = 'RECONNECT';
-  final TextEditingController hostname =
-      TextEditingController(text: '192.168.1.110');
+  final TextEditingController hostname = TextEditingController(text: '192.168.1.110');
   final TextEditingController username = TextEditingController(text: '');
   final TextEditingController password = TextEditingController(text: '');
   @override
@@ -92,12 +92,15 @@ class _HubMQTTState extends State<HubMQTT> {
 
   Widget _deviceListProgress() {
     switch (appStatus) {
-      case -1:
+      case AppStatus.failed:
+        return const Center(child: Text('CONNECTION ERROR - FAILED!'));
+      case AppStatus.notauthorised:
         return const Center(child: Text('CONNECTION ERROR - NOT AUTHORISED!'));
-      case 1:
+      case AppStatus.connecting:
         return const Center(child: CircularProgressIndicator());
-      case 2:
+      case AppStatus.connected:
         return ListView.builder(itemBuilder: (_, __) {});
+      case AppStatus.none:
       default:
         return Container();
     }
@@ -105,8 +108,12 @@ class _HubMQTTState extends State<HubMQTT> {
 
   _queryMQTT() {
     debugPrint('_queryMQTT ${hostname.text} ${username.text} ${password.text}');
+    setState(() {
+      appStatus = AppStatus.connecting;
+    });
     final client = MqttServerClient(hostname.text, widget.title);
-    client.logging(on: true);
+    client.logging(on: false);
+    client.connectTimeoutPeriod = 1000;
     // client.secure = true; // does not work and peer resets connection
     client.connect(username.text, password.text).then((status) {
       debugPrint('_queryMQTT MqttClientConnectionStatus=$status');
@@ -119,7 +126,20 @@ class _HubMQTTState extends State<HubMQTT> {
         case MqttConnectionState.connecting:
         case MqttConnectionState.connected:
           setState(() {
-            appStatus = 1;
+            appStatus = AppStatus.connected;
+          });
+
+          client.subscribe('homeassistant/#', MqttQos.atMostOnce);
+          // ignore that for now, that is for compatibility and not needed at this state.
+          // client.subscribe('discovery/#', MqttQos.atMostOnce);
+          final builder = MqttClientPayloadBuilder().addString('online');
+          client.publishMessage('homeassistant/status', MqttQos.exactlyOnce, builder.payload!);
+
+          client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+            final recMess = c![0].payload as MqttPublishMessage;
+            final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+            debugPrint('_queryMQTT payload=$pt');
           });
           break;
       }
@@ -129,7 +149,13 @@ class _HubMQTTState extends State<HubMQTT> {
       if (connectionStatus == null) return;
       if (connectionStatus.returnCode == MqttConnectReturnCode.notAuthorized) {
         setState(() {
-          appStatus = -1;
+          appStatus = AppStatus.notauthorised;
+        });
+      }
+
+      if (connectionStatus.returnCode == MqttConnectReturnCode.noneSpecified) {
+        setState(() {
+          appStatus = AppStatus.failed;
         });
       }
     });
