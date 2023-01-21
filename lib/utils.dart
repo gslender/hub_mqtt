@@ -12,6 +12,13 @@ class Utils {
     return false;
   }
 
+  static Map<String, dynamic> toJsonMap(String jsonString) {
+    try {
+      return json.decode(jsonString) as Map<String, dynamic>;
+    } catch (_) {}
+    return {};
+  }
+
   static dynamic getFlatJsonPropDynamic(String jsonStr, String prop) {
     try {
       var data = json.decode(jsonStr) as Map<String, dynamic>;

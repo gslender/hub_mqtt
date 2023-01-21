@@ -1,3 +1,4 @@
+import 'package:hub_mqtt/mqtt_abbreviations.dart';
 import 'package:hub_mqtt/utils.dart';
 
 import 'package:hub_mqtt/device.dart';
@@ -19,6 +20,8 @@ class MqttDevice extends Device {
   factory MqttDevice.fromTopicConfig({required String topic, required String config}) {
     if (!Utils.isValidJson(config)) return MqttDevice.invalid();
 
+    config = _convertAbbreviations(config);
+
     final newDevice = MqttDevice(
       id: Utils.getFlatJsonPropString(config, 'unique_id') ?? 'unknown',
       name: Utils.getFlatJsonPropString(config, 'name') ?? 'unknown',
@@ -26,12 +29,23 @@ class MqttDevice extends Device {
     );
     newDevice.lastupdated = DateTime.now().millisecondsSinceEpoch;
     newDevice.stateTopic = Utils.getFlatJsonPropString(config, 'state_topic') ?? '';
-    newDevice.attrTopic = Utils.getFlatJsonPropString(config, 'json_attr_t') ??
-        Utils.getFlatJsonPropString(config, 'json_attributes_topic') ??
-        '';
+    newDevice.attrTopic = Utils.getFlatJsonPropString(config, 'json_attributes_topic') ?? '';
     newDevice.unitOfMeasurement = Utils.getFlatJsonPropString(config, 'unit_of_measurement') ?? '';
     newDevice.deviceDetails = DeviceDetails.fromJson(json: Utils.getFlatJsonPropDynamic(config, 'device') ?? {});
     return newDevice;
+  }
+
+  static String _convertAbbreviations(String jsonStr) {
+    Map<String, dynamic> newJson = {};
+
+    Utils.toJsonMap(jsonStr).forEach((key, value) {
+      if (kAbbreviations.containsKey(key)) {
+        newJson[kAbbreviations[key]!] = value;
+      } else {
+        newJson[key] = value;
+      }
+    });
+    return Utils.toJsonString(newJson);
   }
 }
 

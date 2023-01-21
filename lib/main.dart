@@ -121,6 +121,40 @@ class _HubMQTTState extends State<HubMQTT> {
     }
   }
 
+  test_queryMQTT() {
+    String config = '''{
+                        "name": "lamp",
+                        "uniq_id": "ha-mqtt_light_lamp_",
+                        "state_topic": "ha-mqtt/light/lamp/state",
+                        "json_attr_t": "ha-mqtt/light/lamp/attr",
+                        "device": {
+                            "configuration_url": "https://github.com/shaonianzhentan/node-red-contrib-ha-mqtt",
+                            "identifiers": "ha-mqtt-Test Equipment",
+                            "manufacturer": "shaonianzhentan",
+                            "model": "HA-MQTT",
+                            "sw_version": "1.2.9",
+                            "name": "Test Equipment"
+                        },
+                        "command_topic": "ha-mqtt/light/lamp/set",
+                        "effect_state_topic": "ha-mqtt/light/lamp/effect/state",
+                        "effect_command_topic": "ha-mqtt/light/lamp/effect/set",
+                        "brightness_state_topic": "ha-mqtt/light/lamp/brightness/state",
+                        "brightness_command_topic": "ha-mqtt/light/lamp/brightness/set",
+                        "payload_on": "ON",
+                        "payload_off": "OFF",
+                        "effect_list": [
+                            "flash",
+                            "scan",
+                            "test"
+                        ]
+                    }''';
+    setState(() {
+      appStatus = AppStatus.connected;
+      _devices.clear();
+      _devices.add(MqttDevice.fromTopicConfig(topic: 'test\test\topic', config: config));
+    });
+  }
+
   _queryMQTT() {
     debugPrint('_queryMQTT ${hostname.text} ${username.text} ${password.text}');
     setState(() {
