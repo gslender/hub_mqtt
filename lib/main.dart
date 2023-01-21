@@ -95,7 +95,8 @@ class _HubMQTTState extends State<HubMQTT> {
   Widget _mqttDeviceListItem(MqttDevice device) {
     return Card(
       child: ListTile(
-        title: Text(device.name),
+        title: Text('name:${device.name} id:${device.id}'),
+        subtitle: Text('deviceDetails: ${device.deviceDetails.toString()}'),
       ),
     );
   }
