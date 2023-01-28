@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
@@ -31,6 +33,15 @@ class _HubMQTTState extends State<HubMQTT> {
   final TextEditingController username = TextEditingController(text: '');
   final TextEditingController password = TextEditingController(text: '');
   final List<MqttDevice> _devices = [];
+  MqttDevice? selectedDevice;
+
+  @override
+  void initState() {
+    super.initState();
+    Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (selectedDevice != null) setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,10 +105,22 @@ class _HubMQTTState extends State<HubMQTT> {
   Widget _mqttDeviceListItem(MqttDevice device) {
     return Card(
       child: ListTile(
+        onTap: () => selectedDevice = device,
         title: Text('name:${device.name} id:${device.id}'),
-        subtitle: Text(device.getImmutableAttribValues().toString()),
       ),
     );
+  }
+
+  List<TableRow> _mqttDeviceAttribValues() {
+    if (selectedDevice == null) return [];
+    List<TableRow> table = [];
+    selectedDevice!.getImmutableAttribValues().forEach((key, value) {
+      table.add(TableRow(children: [
+        Text(key),
+        Text(value),
+      ]));
+    });
+    return table;
   }
 
   Widget _deviceListProgress() {
@@ -109,11 +132,24 @@ class _HubMQTTState extends State<HubMQTT> {
       case AppStatus.connecting:
         return const Center(child: CircularProgressIndicator());
       case AppStatus.connected:
-        return ListView.builder(
-            itemCount: _devices.length,
-            itemBuilder: (context, index) {
-              return _mqttDeviceListItem(_devices[index]);
-            });
+        return Row(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                  itemCount: _devices.length,
+                  itemBuilder: (context, index) {
+                    return _mqttDeviceListItem(_devices[index]);
+                  }),
+            ),
+            Expanded(
+                child: Align(
+              alignment: Alignment.topCenter,
+              child: Table(
+                children: [..._mqttDeviceAttribValues()],
+              ),
+            )),
+          ],
+        );
       case AppStatus.none:
       default:
         return Container();
