@@ -159,7 +159,7 @@ class _HubMQTTState extends State<HubMQTT> {
   }
 
   _queryMQTT() {
-    debugPrint('_queryMQTT ${hostname.text} ${username.text} ${password.text}');
+    debugPrint('_queryMQTT ${hostname.text} ${username.text} ${'*' * password.text.length}');
     setState(() {
       selectedDevice = null;
       appStatus = AppStatus.connecting;
