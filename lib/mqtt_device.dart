@@ -19,9 +19,15 @@ class MqttDevice extends Device {
   bool isInvalid(MqttDevice device) => device.id == kInvalid && device.type == kInvalid;
 
   factory MqttDevice.fromTopicConfig({required String topic, required String config}) {
-    if (!Utils.isValidJson(config)) return MqttDevice.invalid(topic);
+    if (!Utils.isValidJson(config)) {
+      print('!!! INVALID CONFIG !!! - $config');
+      return MqttDevice.invalid(topic);
+    }
     String component = _componentFromTopic(topic);
-    if (component == kInvalid) return MqttDevice.invalid(topic);
+    if (component == kInvalid) {
+      print('!!! INVALID COMPONENT !!! - $topic');
+      return MqttDevice.invalid(topic);
+    }
 
     final Map<String, dynamic> json = {};
 

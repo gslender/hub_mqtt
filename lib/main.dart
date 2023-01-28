@@ -161,6 +161,7 @@ class _HubMQTTState extends State<HubMQTT> {
   _queryMQTT() {
     debugPrint('_queryMQTT ${hostname.text} ${username.text} ${password.text}');
     setState(() {
+      selectedDevice = null;
       appStatus = AppStatus.connecting;
     });
     final client = MqttServerClient(hostname.text, widget.title);
