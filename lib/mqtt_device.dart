@@ -49,7 +49,15 @@ class MqttDevice extends Device {
   }
 
   static void _convertJsonToAttribValue(MqttDevice device, Map<String, dynamic> json, String prefix) {
-    json.forEach((key, v) {
+    json.forEach((k, v) {
+      String key = k;
+
+      Map<String, String> abbrev = kAbbreviations;
+      if (prefix == 'device') abbrev = kDeviceAbbreviations;
+
+      if (abbrev.containsKey(k)) {
+        key = abbrev[k]!;
+      }
       String value = v.toString();
       if (value.startsWith('{') && value.endsWith('}')) {
         _convertJsonToAttribValue(device, v, key);
