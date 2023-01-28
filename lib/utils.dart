@@ -3,12 +3,14 @@ import 'dart:convert';
 class Utils {
   static String toJsonString(dynamic j) => json.encoder.convert(j);
 
-  static bool isValidJson(String? jsonString) {
+  static bool isValidJson(String? jsonString, [bool debug = false]) {
     if (jsonString == null) return false;
     try {
       json.decode(jsonString) as Map<String, dynamic>;
       return true;
-    } catch (_) {}
+    } catch (e) {
+      if (debug) print(e);
+    }
     return false;
   }
 

@@ -7,6 +7,31 @@
  * The Apache 2.0 license can be found at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+const List<String> kSupportedComponents = [
+  "alarm_control_panel",
+  "binary_sensor",
+  "button",
+  "camera",
+  "climate",
+  "cover",
+  "device_automation",
+  "device_tracker",
+  "fan",
+  "humidifier",
+  "light",
+  "lock",
+  "number",
+  "scene",
+  "siren",
+  "select",
+  "sensor",
+  "switch",
+  "tag",
+  "text",
+  "update",
+  "vacuum",
+];
+
 /// Abbreviations supported by MQTT discovery
 const Map<String, String> kAbbreviations = {
   "act_t": "action_topic",
@@ -270,4 +295,16 @@ const Map<String, String> kAbbreviations = {
   "l_ver_t": "latest_version_topic",
   "l_ver_tpl": "latest_version_template",
   "pl_inst": "payload_install",
+};
+
+const Map<String, String> kDeviceAbbreviations = {
+  "cns": "connections",
+  "cu": "configuration_url",
+  "ids": "identifiers",
+  "name": "name",
+  "mf": "manufacturer",
+  "mdl": "model",
+  "hw": "hw_version",
+  "sw": "sw_version",
+  "sa": "suggested_area",
 };

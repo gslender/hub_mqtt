@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
@@ -96,7 +95,7 @@ class _HubMQTTState extends State<HubMQTT> {
     return Card(
       child: ListTile(
         title: Text('name:${device.name} id:${device.id}'),
-        subtitle: Text('deviceDetails: ${device.deviceDetails.toString()}'),
+        subtitle: Text(device.getImmutableAttribValues().toString()),
       ),
     );
   }
@@ -119,40 +118,6 @@ class _HubMQTTState extends State<HubMQTT> {
       default:
         return Container();
     }
-  }
-
-  test_queryMQTT() {
-    String config = '''{
-                        "name": "lamp",
-                        "uniq_id": "ha-mqtt_light_lamp_",
-                        "state_topic": "ha-mqtt/light/lamp/state",
-                        "json_attr_t": "ha-mqtt/light/lamp/attr",
-                        "device": {
-                            "configuration_url": "https://github.com/shaonianzhentan/node-red-contrib-ha-mqtt",
-                            "identifiers": "ha-mqtt-Test Equipment",
-                            "manufacturer": "shaonianzhentan",
-                            "model": "HA-MQTT",
-                            "sw_version": "1.2.9",
-                            "name": "Test Equipment"
-                        },
-                        "command_topic": "ha-mqtt/light/lamp/set",
-                        "effect_state_topic": "ha-mqtt/light/lamp/effect/state",
-                        "effect_command_topic": "ha-mqtt/light/lamp/effect/set",
-                        "brightness_state_topic": "ha-mqtt/light/lamp/brightness/state",
-                        "brightness_command_topic": "ha-mqtt/light/lamp/brightness/set",
-                        "payload_on": "ON",
-                        "payload_off": "OFF",
-                        "effect_list": [
-                            "flash",
-                            "scan",
-                            "test"
-                        ]
-                    }''';
-    setState(() {
-      appStatus = AppStatus.connected;
-      _devices.clear();
-      _devices.add(MqttDevice.fromTopicConfig(topic: 'test\test\topic', config: config));
-    });
   }
 
   _queryMQTT() {
@@ -182,16 +147,16 @@ class _HubMQTTState extends State<HubMQTT> {
           client.subscribe('homeassistant/#', MqttQos.atMostOnce);
           // ignore that for now, that is for compatibility and not needed at this state.
           // client.subscribe('discovery/#', MqttQos.atMostOnce);
+          // homeassistant/[DEVICE_TYPE]/[DEVICE_ID]/[OBJECT_ID]/config
           final builder = MqttClientPayloadBuilder().addString('online');
           client.publishMessage('homeassistant/status', MqttQos.exactlyOnce, builder.payload!);
 
           client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
             if (c == null) return;
             final MqttReceivedMessage msg = c.first;
+            if (msg.topic == 'homeassistant/status') return;
             final publishMessage = msg.payload as MqttPublishMessage;
             final config = MqttPublishPayload.bytesToStringAsString(publishMessage.payload.message);
-
-            // debugPrint('_queryMQTT payload=$pt');
             setState(() {
               _devices.add(MqttDevice.fromTopicConfig(topic: msg.topic, config: config));
             });

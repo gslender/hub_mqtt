@@ -1,75 +1,69 @@
-import 'package:hub_mqtt/mqtt_abbreviations.dart';
+import 'package:hub_mqtt/ha_const.dart';
 import 'package:hub_mqtt/utils.dart';
 
 import 'package:hub_mqtt/device.dart';
 
 class MqttDevice extends Device {
+  static const String kInvalid = '!invalid';
+  static const String kUnknown = '?unknown';
+  static const String kNotImplemented = 'notImplementedComponent';
+
   MqttDevice({
     required String id,
     required String name,
     required String type,
   }) : super(id: id, name: name, type: type);
 
-  String stateTopic = '';
-  String attrTopic = '';
-  String unitOfMeasurement = '';
-  DeviceDetails deviceDetails = DeviceDetails();
+  factory MqttDevice.invalid([String? name]) => MqttDevice(id: kInvalid, name: name ?? kInvalid, type: kInvalid);
 
-  factory MqttDevice.invalid() => MqttDevice(id: 'invalid', name: 'invalid', type: 'invalid');
+  bool isInvalid(MqttDevice device) => device.id == kInvalid && device.type == kInvalid;
 
   factory MqttDevice.fromTopicConfig({required String topic, required String config}) {
-    if (!Utils.isValidJson(config)) return MqttDevice.invalid();
+    if (!Utils.isValidJson(config)) return MqttDevice.invalid(topic);
+    String component = _componentFromTopic(topic);
+    if (component == kInvalid) return MqttDevice.invalid(topic);
 
-    config = _convertAbbreviations(config);
+    final Map<String, dynamic> json = {};
 
-    final newDevice = MqttDevice(
-      id: Utils.getFlatJsonPropString(config, 'unique_id') ?? 'unknown',
-      name: Utils.getFlatJsonPropString(config, 'name') ?? 'unknown',
-      type: 'unknown',
+    Utils.toJsonMap(config).forEach((key, value) {
+      if (kAbbreviations.containsKey(key)) {
+        json[kAbbreviations[key]!] = value;
+      } else {
+        json[key] = value;
+      }
+    });
+
+    String id = Utils.getFlatJsonPropString(config, 'unique_id') ?? kUnknown;
+    if (id == kUnknown) return MqttDevice.invalid(topic);
+    String name = Utils.getFlatJsonPropString(config, 'name') ?? '';
+
+    MqttDevice newDevice = MqttDevice(
+      id: id,
+      name: name,
+      type: component,
     );
+
     newDevice.lastupdated = DateTime.now().millisecondsSinceEpoch;
-    newDevice.stateTopic = Utils.getFlatJsonPropString(config, 'state_topic') ?? '';
-    newDevice.attrTopic = Utils.getFlatJsonPropString(config, 'json_attributes_topic') ?? '';
-    newDevice.unitOfMeasurement = Utils.getFlatJsonPropString(config, 'unit_of_measurement') ?? '';
-    newDevice.deviceDetails = DeviceDetails.fromJson(json: Utils.getFlatJsonPropDynamic(config, 'device') ?? {});
+    _convertJsonToAttribValue(newDevice, json, 'config');
     return newDevice;
   }
 
-  static String _convertAbbreviations(String jsonStr) {
-    Map<String, dynamic> newJson = {};
-
-    Utils.toJsonMap(jsonStr).forEach((key, value) {
-      if (kAbbreviations.containsKey(key)) {
-        newJson[kAbbreviations[key]!] = value;
+  static void _convertJsonToAttribValue(MqttDevice device, Map<String, dynamic> json, String prefix) {
+    json.forEach((key, v) {
+      String value = v.toString();
+      if (value.startsWith('{') && value.endsWith('}')) {
+        _convertJsonToAttribValue(device, v, key);
       } else {
-        newJson[key] = value;
+        device.addAttribValue('${prefix}_$key', value.toString());
       }
     });
-    return Utils.toJsonString(newJson);
-  }
-}
-
-class DeviceDetails {
-  DeviceDetails();
-  String configurationUrl = '';
-  String identifiers = '';
-  String manufacturer = '';
-  String model = '';
-  String swVersion = '';
-  String name = '';
-
-  factory DeviceDetails.fromJson({required dynamic json}) {
-    DeviceDetails dd = DeviceDetails();
-    String jsonStr = Utils.toJsonString(json);
-    dd.configurationUrl = Utils.getFlatJsonPropString(jsonStr, 'configuration_url') ?? '';
-    dd.identifiers = Utils.getFlatJsonPropString(jsonStr, 'identifiers') ?? '';
-    dd.manufacturer = Utils.getFlatJsonPropString(jsonStr, 'manufacturer') ?? '';
-    dd.model = Utils.getFlatJsonPropString(jsonStr, 'model') ?? '';
-    dd.swVersion = Utils.getFlatJsonPropString(jsonStr, 'sw_version') ?? '';
-    dd.name = Utils.getFlatJsonPropString(jsonStr, 'name') ?? '';
-    return dd;
   }
 
-  @override
-  String toString() => '$name [$manufacturer $model $swVersion]';
+  static String _componentFromTopic(String topic) {
+    if (topic.contains('/')) {
+      List<String> leafs = topic.split('/');
+      if (kSupportedComponents.contains(leafs[1])) return leafs[1];
+    }
+    return kInvalid;
+  }
 }
