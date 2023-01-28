@@ -39,9 +39,9 @@ class MqttDevice extends Device {
       }
     });
 
-    String id = Utils.getFlatJsonPropString(config, 'unique_id') ?? kUnknown;
+    String id = json['unique_id'] ?? _uidFromTopic(topic);
     if (id == kUnknown) return MqttDevice.invalid(topic);
-    String name = Utils.getFlatJsonPropString(config, 'name') ?? '';
+    String name = json['name'] ?? '';
 
     MqttDevice newDevice = MqttDevice(
       id: id,
@@ -79,5 +79,18 @@ class MqttDevice extends Device {
       if (kSupportedComponents.contains(leafs[1])) return leafs[1];
     }
     return kInvalid;
+  }
+
+  static String _uidFromTopic(String topic) {
+    String? id;
+    if (topic.contains('/')) {
+      List<String> leafs = topic.split('/');
+      if (leafs.length > 2) {
+        leafs.removeLast();
+        leafs.removeAt(0);
+        id = leafs.join('_');
+      }
+    }
+    return id ?? kUnknown;
   }
 }
