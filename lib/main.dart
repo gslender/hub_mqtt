@@ -132,23 +132,25 @@ class _HubMQTTState extends State<HubMQTT> {
       case AppStatus.connecting:
         return const Center(child: CircularProgressIndicator());
       case AppStatus.connected:
-        return Row(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                  itemCount: _devices.length,
-                  itemBuilder: (context, index) {
-                    return _mqttDeviceListItem(_devices[index]);
-                  }),
-            ),
-            Expanded(
-                child: Align(
-              alignment: Alignment.topCenter,
-              child: Table(
-                children: [..._mqttDeviceAttribValues()],
+        return SelectionArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                    itemCount: _devices.length,
+                    itemBuilder: (context, index) {
+                      return _mqttDeviceListItem(_devices[index]);
+                    }),
               ),
-            )),
-          ],
+              Expanded(
+                  child: Align(
+                alignment: Alignment.topCenter,
+                child: Table(
+                  children: [..._mqttDeviceAttribValues()],
+                ),
+              )),
+            ],
+          ),
         );
       case AppStatus.none:
       default:
