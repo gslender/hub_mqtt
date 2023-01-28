@@ -196,8 +196,9 @@ class _HubMQTTState extends State<HubMQTT> {
             if (msg.topic == 'homeassistant/status') return;
             final publishMessage = msg.payload as MqttPublishMessage;
             final config = MqttPublishPayload.bytesToStringAsString(publishMessage.payload.message);
+            MqttDevice device = MqttDevice.fromTopicConfig(topic: msg.topic, config: config);
             setState(() {
-              _devices.add(MqttDevice.fromTopicConfig(topic: msg.topic, config: config));
+              _devices.add(device);
             });
           });
           break;

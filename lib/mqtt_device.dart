@@ -66,7 +66,11 @@ class MqttDevice extends Device {
       }
       String value = v.toString();
       if (value.startsWith('{') && value.endsWith('}')) {
-        _convertJsonToAttribValue(device, v, key);
+        if (v is Map<String, dynamic>) {
+          _convertJsonToAttribValue(device, v, key);
+        } else {
+          print('prefix:$prefix k:$k v:$v');
+        }
       } else {
         device.addAttribValue('${prefix}_$key', value.toString());
       }
