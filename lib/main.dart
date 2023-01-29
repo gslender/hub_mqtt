@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:hub_mqtt/mqtt_discovery.dart';
 
 const String apptitle = 'HUB-MQTT';
 
@@ -164,60 +163,26 @@ class _HubMQTTState extends State<HubMQTT> {
       selectedDevice = null;
       appStatus = AppStatus.connecting;
     });
-    final client = MqttServerClient(hostname.text, widget.title);
-    client.logging(on: false);
-    client.connectTimeoutPeriod = 1000;
-    // client.secure = true; // does not work and peer resets connection
-    client.connect(username.text, password.text).then((status) {
-      debugPrint('_queryMQTT MqttClientConnectionStatus=$status');
-      if (status == null) return;
-      switch (status.state) {
-        case MqttConnectionState.faulted:
-        case MqttConnectionState.disconnecting:
-        case MqttConnectionState.disconnected:
-          break;
-        case MqttConnectionState.connecting:
-        case MqttConnectionState.connected:
-          setState(() {
-            appStatus = AppStatus.connected;
-            _devices.clear();
-          });
-
-          client.subscribe('homeassistant/#', MqttQos.atMostOnce);
-          // ignore that for now, that is for compatibility and not needed at this state.
-          // client.subscribe('discovery/#', MqttQos.atMostOnce);
-          // homeassistant/[DEVICE_TYPE]/[DEVICE_ID]/[OBJECT_ID]/config
-          final builder = MqttClientPayloadBuilder().addString('online');
-          client.publishMessage('homeassistant/status', MqttQos.exactlyOnce, builder.payload!);
-
-          client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-            if (c == null) return;
-            final MqttReceivedMessage msg = c.first;
-            if (msg.topic == 'homeassistant/status') return;
-            final publishMessage = msg.payload as MqttPublishMessage;
-            final config = MqttPublishPayload.bytesToStringAsString(publishMessage.payload.message);
-            MqttDevice device = MqttDevice.fromTopicConfig(topic: msg.topic, config: config);
-            setState(() {
-              _devices.add(device);
-            });
-          });
-          break;
-      }
-    }, onError: (_) {
-      var connectionStatus = client.connectionStatus;
-      debugPrint('_queryMQTT $connectionStatus');
-      if (connectionStatus == null) return;
-      if (connectionStatus.returnCode == MqttConnectReturnCode.notAuthorized) {
-        setState(() {
-          appStatus = AppStatus.notauthorised;
-        });
-      }
-
-      if (connectionStatus.returnCode == MqttConnectReturnCode.noneSpecified) {
-        setState(() {
-          appStatus = AppStatus.failed;
-        });
-      }
-    });
+    MqttDiscovery discovery = MqttDiscovery();
+    discovery.connect(
+      hostname: hostname.text,
+      clientId: widget.title,
+      username: username.text,
+      password: password.text,
+      connectedCallback: () => setState(() {
+        appStatus = AppStatus.connected;
+        _devices.clear();
+      }),
+      failedCallback: () => setState(() {
+        appStatus = AppStatus.failed;
+      }),
+      notAuthorizedCallback: () => setState(() {
+        appStatus = AppStatus.notauthorised;
+      }),
+      devicesUpdatedCallback: () => setState(() {
+        _devices.clear();
+        _devices.addAll(discovery.getImmutableDevices().values);
+      }),
+    );
   }
 }

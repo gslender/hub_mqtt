@@ -48,10 +48,11 @@ class Device {
     _mapAttribValues[attrib.trim()] = value.trim();
   }
 
+  String getValue(String attrib) => _mapAttribValues[attrib] ?? '';
+
   Iterable<String> getAttributes() => _mapAttribValues.keys;
 
-  Map<String, String> getImmutableAttribValues() =>
-      Map<String, String>.unmodifiable(_mapAttribValues);
+  Map<String, String> getImmutableAttribValues() => Map<String, String>.unmodifiable(_mapAttribValues);
 
   void addCommand(String cmd) => _commands.add(cmd);
 
