@@ -32,6 +32,7 @@ class _HubMQTTState extends State<HubMQTT> {
   final TextEditingController username = TextEditingController(text: '');
   final TextEditingController password = TextEditingController(text: '');
   final List<MqttDevice> _devices = [];
+  final MqttDiscovery discovery = MqttDiscovery();
   MqttDevice? selectedDevice;
 
   @override
@@ -40,6 +41,12 @@ class _HubMQTTState extends State<HubMQTT> {
     Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (selectedDevice != null) setState(() {});
     });
+  }
+
+  @override
+  void dispose() {
+    discovery.disconnect();
+    super.dispose();
   }
 
   @override
@@ -163,7 +170,7 @@ class _HubMQTTState extends State<HubMQTT> {
       selectedDevice = null;
       appStatus = AppStatus.connecting;
     });
-    MqttDiscovery discovery = MqttDiscovery();
+
     discovery.connect(
       hostname: hostname.text,
       clientId: widget.title,
