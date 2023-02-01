@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 class Utils {
   static bool isValidJson(String? jsonString, [bool debug = false]) {
@@ -18,4 +19,7 @@ class Utils {
     } catch (_) {}
     return {};
   }
+
+  static String limitString(String payloadStr, int i) =>
+      payloadStr.length < i ? payloadStr : '${payloadStr.substring(0, min(i, payloadStr.length))}...';
 }

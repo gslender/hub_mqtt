@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:hub_mqtt/ha_const.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
@@ -56,7 +58,7 @@ class MqttDiscovery {
           mqttClient!.publishMessage('homeassistant/status', MqttQos.exactlyOnce, builder.payload!);
 
           mqttClient!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-            if (c == null) return;
+            if (c == null || c.isEmpty) return;
             String payloadStr = '';
             String topicStr = '';
             try {
@@ -67,7 +69,8 @@ class MqttDiscovery {
             } catch (_) {
               return;
             }
-            print('ReceivedMessage: $topicStr ${payloadStr.substring(0, 20)}...');
+            print('ReceivedMessage: TOPIC: $topicStr');
+            print('ReceivedMessage: PAYLOAD: ${Utils.limitString(payloadStr, 40)}');
 
             if (topicStr.endsWith('/status')) {
               return;
@@ -89,12 +92,9 @@ class MqttDiscovery {
                     // concat devices
                     mqttDevice = _mapDevices[mip.id];
                     attrVal.forEach((key, value) {
-                      if (mqttDevice!.getAttributes().contains(key)) {
-                        String was = mqttDevice.getValue(key);
-                        if (was != value) print('key: $key was:$was now: $value');
-                      }
-                      if (key.startsWith('device_')) mip.prefix = '';
-                      mqttDevice.addAttribValue('${mip.prefix}$key', value);
+                      String prefix = mip.prefix;
+                      if (key.startsWith('device_')) prefix = '';
+                      mqttDevice?.addAttribValue('$prefix$key', value);
                     });
                   } else {
                     // new device
@@ -113,22 +113,10 @@ class MqttDiscovery {
                   if (mqttDevice != null) {
                     // now check MqttSubscriptionStatus of the state_topic,
                     // availability_topic,command_topic and json_attributes_topic
-                    if (mqttClient!.getSubscriptionsStatus(mqttDevice.getValue('state_topic')) !=
-                        MqttSubscriptionStatus.active) {
-                      mqttClient!.subscribe(mqttDevice.getValue('state_topic'), MqttQos.atMostOnce);
-                    }
-                    if (mqttClient!.getSubscriptionsStatus(mqttDevice.getValue('availability_topic')) !=
-                        MqttSubscriptionStatus.active) {
-                      mqttClient!.subscribe(mqttDevice.getValue('availability_topic'), MqttQos.atMostOnce);
-                    }
-                    if (mqttClient!.getSubscriptionsStatus(mqttDevice.getValue('command_topic')) !=
-                        MqttSubscriptionStatus.active) {
-                      mqttClient!.subscribe(mqttDevice.getValue('command_topic'), MqttQos.atMostOnce);
-                    }
-                    if (mqttClient!.getSubscriptionsStatus(mqttDevice.getValue('json_attributes_topic')) !=
-                        MqttSubscriptionStatus.active) {
-                      mqttClient!.subscribe(mqttDevice.getValue('json_attributes_topic'), MqttQos.atMostOnce);
-                    }
+                    _subScribe(mqttDevice.getImmutableAttribValues(), '_state_topic');
+                    _subScribe(mqttDevice.getImmutableAttribValues(), '_availability_topic');
+                    _subScribe(mqttDevice.getImmutableAttribValues(), '_command_topic');
+                    _subScribe(mqttDevice.getImmutableAttribValues(), '_json_attributes_topic');
                   }
                 }
               }
@@ -148,6 +136,18 @@ class MqttDiscovery {
 
       if (connectionStatus.returnCode == MqttConnectReturnCode.noneSpecified) {
         if (failedCallback != null) failedCallback();
+      }
+    });
+  }
+
+  void _subScribe(Map<String, String> attribValues, String partTopic) {
+    if (mqttClient?.connectionStatus?.state != MqttConnectionState.connected) return;
+    attribValues.forEach((key, topic) {
+      if (key.endsWith(partTopic)) {
+        print('Subscribe $topic');
+        if (mqttClient!.getSubscriptionsStatus(topic) != MqttSubscriptionStatus.active) {
+          mqttClient!.subscribe(topic, MqttQos.atMostOnce);
+        }
       }
     });
   }
@@ -203,8 +203,8 @@ class MqttDiscovery {
         if (v is Map<String, dynamic>) {
           _convertJsonToAttribValue(attrVal, v, key);
         } else {
-          print('prefix:$prefix k:$k v:$v');
-          attrVal['${prefix}_$key'] = value.toString();
+          //TODO unhandled do we need to do anything prior to templates ??
+          attrVal['${prefix}_$key'] = value;
         }
       } else {
         attrVal['${prefix}_$key'] = value.toString();
