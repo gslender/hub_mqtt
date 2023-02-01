@@ -8,6 +8,7 @@ class Device {
     _mapAttribValues['_name'] = name;
     _mapAttribValues['_label'] = label;
     _mapAttribValues['_id'] = id;
+    _mapAttribValues['_type'] = type;
   }
 
   Device.notfound()

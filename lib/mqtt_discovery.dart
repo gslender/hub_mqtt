@@ -1,22 +1,23 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
 import 'package:hub_mqtt/ha_const.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:events_emitter/events_emitter.dart';
 
 class MqttDiscovery {
   final Map<String, MqttDevice> _mapDevices = {};
   Map<String, MqttDevice> getImmutableDevices() => Map<String, MqttDevice>.unmodifiable(_mapDevices);
   MqttClientConnectionStatus? connectionStatus;
   MqttServerClient? mqttClient;
+  final EventEmitter events = EventEmitter();
 
   void disconnect() {
     if (mqttClient != null) {
       mqttClient!.disconnect();
     }
+    events.off();
   }
 
   void connect({
@@ -61,6 +62,7 @@ class MqttDiscovery {
             if (c == null || c.isEmpty) return;
             String payloadStr = '';
             String topicStr = '';
+
             try {
               final MqttReceivedMessage<MqttMessage?> msg = c.first;
               final publishMessage = msg.payload as MqttPublishMessage;
@@ -69,13 +71,13 @@ class MqttDiscovery {
             } catch (_) {
               return;
             }
-            print('ReceivedMessage: TOPIC: $topicStr');
-            print('ReceivedMessage: PAYLOAD: ${Utils.limitString(payloadStr, 40)}');
 
+            /// STATUS TOPIC
             if (topicStr.endsWith('/status')) {
               return;
             }
 
+            /// CONFIG TOPIC
             if (topicStr.endsWith('/config')) {
               Map<String, String> attrVal = _attrValFromTopicConfig(topicStr, payloadStr);
               if (attrVal.containsKey(MqttDevice.kInvalid)) {
@@ -106,23 +108,26 @@ class MqttDiscovery {
                     );
                     attrVal.forEach((key, value) {
                       if (key.startsWith('device_')) mip.prefix = '';
-                      mqttDevice!.addAttribValue('${mip.prefix}$key', value);
+                      mqttDevice?.addAttribValue('${mip.prefix}$key', value);
                     });
+                    mqttDevice.addAttribValue('topic', topicStr);
                     _mapDevices[mip.id] = mqttDevice;
                   }
                   if (mqttDevice != null) {
                     // now check MqttSubscriptionStatus of the state_topic,
                     // availability_topic,command_topic and json_attributes_topic
-                    _subScribe(mqttDevice.getImmutableAttribValues(), '_state_topic');
-                    _subScribe(mqttDevice.getImmutableAttribValues(), '_availability_topic');
-                    _subScribe(mqttDevice.getImmutableAttribValues(), '_command_topic');
-                    _subScribe(mqttDevice.getImmutableAttribValues(), '_json_attributes_topic');
+                    _subScribe(mqttDevice, '_state_topic');
+                    _subScribe(mqttDevice, '_availability_topic');
+                    _subScribe(mqttDevice, '_command_topic');
+                    _subScribe(mqttDevice, '_json_attributes_topic');
                   }
                 }
               }
               if (devicesUpdatedCallback != null) devicesUpdatedCallback();
               return;
             }
+
+            events.emit(topicStr, payloadStr);
           });
           break;
       }
@@ -140,11 +145,14 @@ class MqttDiscovery {
     });
   }
 
-  void _subScribe(Map<String, String> attribValues, String partTopic) {
+  void _subScribe(MqttDevice mqttDevice, String partTopic) {
+    final attribValues = mqttDevice.getImmutableAttribValues();
     if (mqttClient?.connectionStatus?.state != MqttConnectionState.connected) return;
     attribValues.forEach((key, topic) {
       if (key.endsWith(partTopic)) {
-        print('Subscribe $topic');
+        events.on<String>(topic, (String data) {
+          mqttDevice.addAttribValue(topic, data);
+        });
         if (mqttClient!.getSubscriptionsStatus(topic) != MqttSubscriptionStatus.active) {
           mqttClient!.subscribe(topic, MqttQos.atMostOnce);
         }

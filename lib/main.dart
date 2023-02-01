@@ -112,7 +112,8 @@ class _HubMQTTState extends State<HubMQTT> {
     return Card(
       child: ListTile(
         onTap: () => selectedDevice = device,
-        title: Text('name:${device.name} id:${device.id}'),
+        title: Text('type:${device.type} name:${device.name}'),
+        subtitle: Text('id:${device.id}'),
       ),
     );
   }
