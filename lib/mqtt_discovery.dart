@@ -145,13 +145,25 @@ class MqttDiscovery {
     });
   }
 
+  void _addJsonAttrToMqttDevice(MqttDevice mqttDevice, String attribName, Map<String, dynamic> json) {
+    json.forEach((key, value) {
+      String newAttribName = '${attribName}_$key';
+      if (value is Map<String, dynamic>) _addJsonAttrToMqttDevice(mqttDevice, newAttribName, value);
+      mqttDevice.addAttribValue(newAttribName, value.toString());
+    });
+  }
+
   void _subScribe(MqttDevice mqttDevice, String partTopic) {
     final attribValues = mqttDevice.getImmutableAttribValues();
     if (mqttClient?.connectionStatus?.state != MqttConnectionState.connected) return;
     attribValues.forEach((key, topic) {
       if (key.endsWith(partTopic)) {
         events.on<String>(topic, (String data) {
-          mqttDevice.addAttribValue(topic, data);
+          if (data.startsWith('{')) {
+            _addJsonAttrToMqttDevice(mqttDevice, attribNameFromTopic(topic), Utils.toJsonMap(data));
+          } else {
+            mqttDevice.addAttribValue(attribNameFromTopic(topic), data);
+          }
         });
         if (mqttClient!.getSubscriptionsStatus(topic) != MqttSubscriptionStatus.active) {
           mqttClient!.subscribe(topic, MqttQos.atMostOnce);
@@ -184,15 +196,6 @@ class MqttDiscovery {
     Map<String, String> attrVal = {};
     _convertJsonToAttribValue(attrVal, json, 'config');
 
-    // MqttDevice newDevice = MqttDevice(
-    //   id: id,
-    //   name: name,
-    //   type: component,
-    // );
-
-    // newDevice.lastupdated = DateTime.now().millisecondsSinceEpoch;
-    // attrVal.forEach((key, value) => newDevice.addAttribValue(key, value));
-
     return attrVal;
   }
 
@@ -218,6 +221,14 @@ class MqttDiscovery {
         attrVal['${prefix}_$key'] = value.toString();
       }
     });
+  }
+
+  String attribNameFromTopic(String topic) {
+    if (topic.contains('/')) {
+      List<String> leafs = topic.split('/');
+      return '${leafs[leafs.length - 2]}_${leafs[leafs.length - 1]}';
+    }
+    return MqttDevice.kInvalid;
   }
 
   String _componentFromTopic(String topic) {
