@@ -107,6 +107,56 @@ class MqttDiscovery {
     if (attrVal.containsKey(MqttDevice.kInvalid)) {
       _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(attrVal[MqttDevice.kInvalid]);
     } else {
+      MqttTopicParts parts = _getPartsFromTopic(topicStr);
+      String id = attrVal['device_identifiers'] ?? MqttDevice.kInvalid;
+      if (id == MqttDevice.kInvalid) {
+        _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] =
+            MqttDevice.invalid('INVALID DEVICE_ID $topicStr');
+      } else {
+        MqttDevice? mqttDevice;
+        String prefix = '${parts.objectIdTopic}_';
+        if (_mapDevices.containsKey(id)) {
+          // concat devices
+          mqttDevice = _mapDevices[id];
+          attrVal.forEach((key, value) {
+            if (key.startsWith('device_')) prefix = '';
+            mqttDevice?.addAttribValue('$prefix$key', value);
+          });
+        } else {
+          // new device
+          // String name = '${attrVal['device_name'] ?? topicStr} ${parts.componentTopic}';
+          mqttDevice = MqttDevice(
+            id: id,
+            name: attrVal['device_name'] ?? topicStr,
+            label: topicStr,
+            type: _componentFromTopic(topicStr),
+          );
+          attrVal.forEach((key, value) {
+            if (key.startsWith('device_')) prefix = '';
+            mqttDevice?.addAttribValue('$prefix$key', value);
+          });
+          mqttDevice.addAttribValue('topic', topicStr);
+          _mapDevices[id] = mqttDevice;
+        }
+
+        if (mqttDevice != null) {
+          // now check MqttSubscriptionStatus of the state_topic,
+          // availability_topic,command_topic and json_attributes_topic
+          _subScribe(mqttDevice, '_state_topic');
+          _subScribe(mqttDevice, '_availability_topic');
+          _subScribe(mqttDevice, '_command_topic');
+          _subScribe(mqttDevice, '_json_attributes_topic');
+        }
+      }
+    }
+  }
+
+  /*
+  void _processConfigTopic(String topicStr, String payloadStr) {
+    Map<String, String> attrVal = _attrValFromTopicConfig(topicStr, payloadStr);
+    if (attrVal.containsKey(MqttDevice.kInvalid)) {
+      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(attrVal[MqttDevice.kInvalid]);
+    } else {
       String component = _componentFromTopic(topicStr);
       MqttIdPrefix mip = _idPrefixFromTopic(topicStr);
       if (mip.id == MqttDevice.kInvalid) {
@@ -147,7 +197,7 @@ class MqttDiscovery {
       }
     }
   }
-
+*/
   void _addJsonAttrToMqttDevice(MqttDevice mqttDevice, String attribName, Map<String, dynamic> json) {
     json.forEach((key, value) {
       String newAttribName = '${attribName}_$key';
@@ -242,6 +292,37 @@ class MqttDiscovery {
     return MqttDevice.kInvalid;
   }
 
+  MqttTopicParts _getPartsFromTopic(String topicStr) {
+    MqttTopicParts topicParts = MqttTopicParts();
+    topicParts.configTopic = MqttDevice.kInvalid;
+    if (topicStr.contains('/')) {
+      List<String> leafs = topicStr.split('/');
+      if (leafs.length > 2) {
+        // short example is homeassistant/light/lamp/config
+        // long example is  homeassistant/sensor/0x00124b001b78133/battery/config
+        String configTopic = leafs.removeLast(); // remove config from the end
+        if (configTopic != 'config') return topicParts;
+        topicParts.configTopic = configTopic;
+        topicParts.discoveryTopic = leafs.removeAt(0); // homeassistant from start
+        topicParts.componentTopic = leafs.removeAt(0); // light (or) sensor
+        topicParts.nodeIdTopic = leafs.removeAt(0); // lamp (or) 0x00124b001b78133
+        if (leafs.isNotEmpty) {
+          topicParts.objectIdTopic = leafs.removeAt(0); // battery
+        }
+      }
+    }
+    return topicParts;
+  }
+}
+
+class MqttTopicParts {
+  String discoveryTopic = '';
+  String componentTopic = '';
+  String nodeIdTopic = '';
+  String objectIdTopic = '';
+  String configTopic = '';
+}
+/*
   MqttIdPrefix _idPrefixFromTopic(String topic) {
     MqttIdPrefix idPrefix = MqttIdPrefix();
     if (topic.contains('/')) {
@@ -267,3 +348,4 @@ class MqttIdPrefix {
   String id = MqttDevice.kInvalid;
   String prefix = '';
 }
+*/

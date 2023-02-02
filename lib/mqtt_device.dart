@@ -6,10 +6,12 @@ class MqttDevice extends Device {
   MqttDevice({
     required String id,
     required String name,
+    required String label,
     required String type,
-  }) : super(id: id, name: name, type: type);
+  }) : super(id: id, name: name, label: label, type: type);
 
-  factory MqttDevice.invalid([String? name]) => MqttDevice(id: kInvalid, name: name ?? kInvalid, type: kInvalid);
+  factory MqttDevice.invalid([String? name]) =>
+      MqttDevice(id: kInvalid, name: name ?? kInvalid, label: kInvalid, type: kInvalid);
 
   bool isInvalid(MqttDevice device) => device.id == kInvalid && device.type == kInvalid;
 }
