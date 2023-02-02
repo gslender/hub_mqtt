@@ -108,12 +108,63 @@ class _HubMQTTState extends State<HubMQTT> {
     );
   }
 
+  Widget _getComponentIcon(String type) {
+    switch (type) {
+      case 'light':
+        return const Icon(Icons.light);
+      case 'sensor':
+        return const Icon(Icons.sensors);
+      case 'binary_sensor':
+        return const Icon(Icons.sync_alt_rounded);
+      case 'tag':
+        return const Icon(Icons.label);
+      case 'climate':
+        return const Icon(Icons.device_thermostat);
+      case 'cover':
+        return const Icon(Icons.door_sliding);
+      case 'update':
+        return const Icon(Icons.update);
+      case 'switch':
+        return const Icon(Icons.toggle_off_outlined);
+      case 'fan':
+        return const Icon(Icons.air);
+      case 'alarm_control_panel':
+        return const Icon(Icons.alarm);
+      case 'button':
+        return const Icon(Icons.smart_button);
+      case 'camera':
+        return const Icon(Icons.camera);
+      case 'device_automation':
+        return const Icon(Icons.settings);
+      case 'device_tracker':
+        return const Icon(Icons.developer_board);
+      case 'humidifier':
+        return const Icon(Icons.cloudy_snowing);
+      case 'lock':
+        return const Icon(Icons.lock);
+      case 'number':
+        return const Icon(Icons.numbers);
+      case 'scene':
+        return const Icon(Icons.group_work);
+      case 'siren':
+        return const Icon(Icons.speaker);
+      case 'select':
+        return const Icon(Icons.select_all);
+      case 'text':
+        return const Icon(Icons.text_fields);
+      case 'vacuum':
+        return const Icon(Icons.cleaning_services);
+    }
+    return const Icon(Icons.question_mark);
+  }
+
   Widget _mqttDeviceListItem(MqttDevice device) {
     return Card(
       child: ListTile(
+        leading: _getComponentIcon(device.type),
         onTap: () => selectedDevice = device,
-        title: Text('type:${device.type} name:${device.name}'),
-        subtitle: Text('id:${device.id}'),
+        title: Text(device.name),
+        subtitle: Text('type:${device.type} id:${device.id}'),
       ),
     );
   }

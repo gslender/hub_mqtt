@@ -79,50 +79,7 @@ class MqttDiscovery {
 
             /// CONFIG TOPIC
             if (topicStr.endsWith('/config')) {
-              Map<String, String> attrVal = _attrValFromTopicConfig(topicStr, payloadStr);
-              if (attrVal.containsKey(MqttDevice.kInvalid)) {
-                _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] =
-                    MqttDevice.invalid(attrVal[MqttDevice.kInvalid]);
-              } else {
-                String component = _componentFromTopic(topicStr);
-                MqttIdPrefix mip = _idPrefixFromTopic(topicStr);
-                if (mip.id == MqttDevice.kInvalid) {
-                  //MqttDevice.kInvalid: 'INVALID UID $topic'
-                } else {
-                  MqttDevice? mqttDevice;
-                  if (_mapDevices.containsKey(mip.id)) {
-                    // concat devices
-                    mqttDevice = _mapDevices[mip.id];
-                    attrVal.forEach((key, value) {
-                      String prefix = mip.prefix;
-                      if (key.startsWith('device_')) prefix = '';
-                      mqttDevice?.addAttribValue('$prefix$key', value);
-                    });
-                  } else {
-                    // new device
-                    String name = '${attrVal['device_name'] ?? topicStr} $component';
-                    mqttDevice = MqttDevice(
-                      id: mip.id,
-                      name: name,
-                      type: _componentFromTopic(topicStr),
-                    );
-                    attrVal.forEach((key, value) {
-                      if (key.startsWith('device_')) mip.prefix = '';
-                      mqttDevice?.addAttribValue('${mip.prefix}$key', value);
-                    });
-                    mqttDevice.addAttribValue('topic', topicStr);
-                    _mapDevices[mip.id] = mqttDevice;
-                  }
-                  if (mqttDevice != null) {
-                    // now check MqttSubscriptionStatus of the state_topic,
-                    // availability_topic,command_topic and json_attributes_topic
-                    _subScribe(mqttDevice, '_state_topic');
-                    _subScribe(mqttDevice, '_availability_topic');
-                    _subScribe(mqttDevice, '_command_topic');
-                    _subScribe(mqttDevice, '_json_attributes_topic');
-                  }
-                }
-              }
+              _processConfigTopic(topicStr, payloadStr);
               if (devicesUpdatedCallback != null) devicesUpdatedCallback();
               return;
             }
@@ -143,6 +100,52 @@ class MqttDiscovery {
         if (failedCallback != null) failedCallback();
       }
     });
+  }
+
+  void _processConfigTopic(String topicStr, String payloadStr) {
+    Map<String, String> attrVal = _attrValFromTopicConfig(topicStr, payloadStr);
+    if (attrVal.containsKey(MqttDevice.kInvalid)) {
+      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(attrVal[MqttDevice.kInvalid]);
+    } else {
+      String component = _componentFromTopic(topicStr);
+      MqttIdPrefix mip = _idPrefixFromTopic(topicStr);
+      if (mip.id == MqttDevice.kInvalid) {
+        //MqttDevice.kInvalid: 'INVALID UID $topic'
+      } else {
+        MqttDevice? mqttDevice;
+        if (_mapDevices.containsKey(mip.id)) {
+          // concat devices
+          mqttDevice = _mapDevices[mip.id];
+          attrVal.forEach((key, value) {
+            String prefix = mip.prefix;
+            if (key.startsWith('device_')) prefix = '';
+            mqttDevice?.addAttribValue('$prefix$key', value);
+          });
+        } else {
+          // new device
+          String name = '${attrVal['device_name'] ?? topicStr} $component';
+          mqttDevice = MqttDevice(
+            id: mip.id,
+            name: name,
+            type: _componentFromTopic(topicStr),
+          );
+          attrVal.forEach((key, value) {
+            if (key.startsWith('device_')) mip.prefix = '';
+            mqttDevice?.addAttribValue('${mip.prefix}$key', value);
+          });
+          mqttDevice.addAttribValue('topic', topicStr);
+          _mapDevices[mip.id] = mqttDevice;
+        }
+        if (mqttDevice != null) {
+          // now check MqttSubscriptionStatus of the state_topic,
+          // availability_topic,command_topic and json_attributes_topic
+          _subScribe(mqttDevice, '_state_topic');
+          _subScribe(mqttDevice, '_availability_topic');
+          _subScribe(mqttDevice, '_command_topic');
+          _subScribe(mqttDevice, '_json_attributes_topic');
+        }
+      }
+    }
   }
 
   void _addJsonAttrToMqttDevice(MqttDevice mqttDevice, String attribName, Map<String, dynamic> json) {
