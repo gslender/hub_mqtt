@@ -5,7 +5,7 @@ import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_discovery.dart';
 
-const String apptitle = 'HUB-MQTT';
+const String apptitle = 'hub_mqtt';
 
 void main() {
   runApp(MaterialApp(
@@ -160,7 +160,10 @@ class _HubMQTTState extends State<HubMQTT> {
 
   Widget _mqttDeviceListItem(MqttDevice device) {
     return Card(
+      color: device == selectedDevice ? Colors.black87 : null,
       child: ListTile(
+        selectedColor: Colors.white,
+        selected: device == selectedDevice,
         leading: _getComponentIcon(device.type),
         onTap: () => selectedDevice = device,
         title: Text(device.name),
@@ -169,7 +172,21 @@ class _HubMQTTState extends State<HubMQTT> {
     );
   }
 
-  List<TableRow> _mqttDeviceAttribValues() {
+  Widget _mqttSelectedDeviceDetails() {
+    if (selectedDevice == null) return Container();
+    return Column(
+        children: selectedDevice
+                ?.getTopics()
+                .map<Widget>((e) => Container(
+                      padding: const EdgeInsets.all(2),
+                      alignment: Alignment.centerLeft,
+                      child: Text(e),
+                    ))
+                .toList() ??
+            []);
+  }
+
+  List<TableRow> _mqttSelectedDeviceAttribValues() {
     if (selectedDevice == null) return [];
     List<TableRow> table = [];
     selectedDevice!.getImmutableAttribValues().forEach((key, value) {
@@ -190,7 +207,8 @@ class _HubMQTTState extends State<HubMQTT> {
       case AppStatus.connecting:
         return const Center(child: CircularProgressIndicator());
       case AppStatus.connected:
-        return SelectionArea(
+        return Container(
+          padding: const EdgeInsets.all(4),
           child: Row(
             children: [
               Expanded(
@@ -203,8 +221,21 @@ class _HubMQTTState extends State<HubMQTT> {
               Expanded(
                   child: Align(
                 alignment: Alignment.topCenter,
-                child: Table(
-                  children: [..._mqttDeviceAttribValues()],
+                child: Column(
+                  children: [
+                    Card(elevation: 5, child: _mqttSelectedDeviceDetails()),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Card(
+                        elevation: 5,
+                        child: SingleChildScrollView(
+                          child: Table(
+                            children: [..._mqttSelectedDeviceAttribValues()],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               )),
             ],

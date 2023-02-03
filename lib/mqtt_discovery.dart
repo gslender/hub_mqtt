@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:hub_mqtt/ha_const.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
@@ -67,7 +69,7 @@ class MqttDiscovery {
               final MqttReceivedMessage<MqttMessage?> msg = c.first;
               final publishMessage = msg.payload as MqttPublishMessage;
               topicStr = msg.topic;
-              payloadStr = MqttPublishPayload.bytesToStringAsString(publishMessage.payload.message);
+              payloadStr = utf8.decoder.convert(publishMessage.payload.message);
             } catch (_) {
               return;
             }
@@ -118,6 +120,7 @@ class MqttDiscovery {
         if (_mapDevices.containsKey(id)) {
           // concat devices
           mqttDevice = _mapDevices[id];
+          mqttDevice?.addTopic(topicStr);
           attrVal.forEach((key, value) {
             if (key.startsWith('device_')) prefix = '';
             mqttDevice?.addAttribValue('$prefix$key', value);
@@ -131,6 +134,7 @@ class MqttDiscovery {
             label: topicStr,
             type: _componentFromTopic(topicStr),
           );
+          mqttDevice.addTopic(topicStr);
           attrVal.forEach((key, value) {
             if (key.startsWith('device_')) prefix = '';
             mqttDevice?.addAttribValue('$prefix$key', value);
@@ -151,53 +155,6 @@ class MqttDiscovery {
     }
   }
 
-  /*
-  void _processConfigTopic(String topicStr, String payloadStr) {
-    Map<String, String> attrVal = _attrValFromTopicConfig(topicStr, payloadStr);
-    if (attrVal.containsKey(MqttDevice.kInvalid)) {
-      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(attrVal[MqttDevice.kInvalid]);
-    } else {
-      String component = _componentFromTopic(topicStr);
-      MqttIdPrefix mip = _idPrefixFromTopic(topicStr);
-      if (mip.id == MqttDevice.kInvalid) {
-        //MqttDevice.kInvalid: 'INVALID UID $topic'
-      } else {
-        MqttDevice? mqttDevice;
-        if (_mapDevices.containsKey(mip.id)) {
-          // concat devices
-          mqttDevice = _mapDevices[mip.id];
-          attrVal.forEach((key, value) {
-            String prefix = mip.prefix;
-            if (key.startsWith('device_')) prefix = '';
-            mqttDevice?.addAttribValue('$prefix$key', value);
-          });
-        } else {
-          // new device
-          String name = '${attrVal['device_name'] ?? topicStr} $component';
-          mqttDevice = MqttDevice(
-            id: mip.id,
-            name: name,
-            type: _componentFromTopic(topicStr),
-          );
-          attrVal.forEach((key, value) {
-            if (key.startsWith('device_')) mip.prefix = '';
-            mqttDevice?.addAttribValue('${mip.prefix}$key', value);
-          });
-          mqttDevice.addAttribValue('topic', topicStr);
-          _mapDevices[mip.id] = mqttDevice;
-        }
-        if (mqttDevice != null) {
-          // now check MqttSubscriptionStatus of the state_topic,
-          // availability_topic,command_topic and json_attributes_topic
-          _subScribe(mqttDevice, '_state_topic');
-          _subScribe(mqttDevice, '_availability_topic');
-          _subScribe(mqttDevice, '_command_topic');
-          _subScribe(mqttDevice, '_json_attributes_topic');
-        }
-      }
-    }
-  }
-*/
   void _addJsonAttrToMqttDevice(MqttDevice mqttDevice, String attribName, Map<String, dynamic> json) {
     json.forEach((key, value) {
       String newAttribName = '${attribName}_$key';
@@ -322,30 +279,3 @@ class MqttTopicParts {
   String objectIdTopic = '';
   String configTopic = '';
 }
-/*
-  MqttIdPrefix _idPrefixFromTopic(String topic) {
-    MqttIdPrefix idPrefix = MqttIdPrefix();
-    if (topic.contains('/')) {
-      List<String> leafs = topic.split('/');
-      if (leafs.length > 2 && leafs.last == 'config') {
-        // short example is homeassistant/light/lamp/config
-        // long example is  homeassistant/sensor/0x00124b001b78133/battery/config
-        leafs.removeLast(); // remove config from the end
-        leafs.removeAt(0); // homeassistant from start
-        String componentTopic = leafs.removeAt(0); // light (or) sensor
-        String nodeTopic = leafs.removeAt(0); // lamp (or) 0x00124b001b78133
-        idPrefix.id = '${componentTopic}_$nodeTopic';
-        if (leafs.isNotEmpty) {
-          idPrefix.prefix = '${leafs.removeAt(0)}_';
-        }
-      }
-    }
-    return idPrefix;
-  }
-}
-
-class MqttIdPrefix {
-  String id = MqttDevice.kInvalid;
-  String prefix = '';
-}
-*/
