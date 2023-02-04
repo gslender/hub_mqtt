@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hub_mqtt/device.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_discovery.dart';
@@ -108,52 +109,53 @@ class _HubMQTTState extends State<HubMQTT> {
     );
   }
 
-  Widget _getComponentIcon(String type) {
+  Widget _getComponentIcon(DevicePurpose type) {
     switch (type) {
-      case 'light':
+      case DevicePurpose.aLight:
         return const Icon(Icons.light);
-      case 'sensor':
+      case DevicePurpose.aSensor:
         return const Icon(Icons.sensors);
-      case 'binary_sensor':
+      case DevicePurpose.aBinarySensor:
         return const Icon(Icons.sync_alt_rounded);
-      case 'tag':
-        return const Icon(Icons.label);
-      case 'climate':
+      // case DevicePurpose.aTag:
+      //   return const Icon(Icons.label);
+      case DevicePurpose.aThermostat:
         return const Icon(Icons.device_thermostat);
-      case 'cover':
+      case DevicePurpose.aBlind:
         return const Icon(Icons.door_sliding);
-      case 'update':
-        return const Icon(Icons.update);
-      case 'switch':
+      // case 'update':
+      // return const Icon(Icons.update);
+      case DevicePurpose.aSwitch:
         return const Icon(Icons.toggle_off_outlined);
-      case 'fan':
+      case DevicePurpose.aFan:
         return const Icon(Icons.air);
-      case 'alarm_control_panel':
-        return const Icon(Icons.alarm);
-      case 'button':
-        return const Icon(Icons.smart_button);
-      case 'camera':
-        return const Icon(Icons.camera);
-      case 'device_automation':
-        return const Icon(Icons.settings);
-      case 'device_tracker':
-        return const Icon(Icons.developer_board);
-      case 'humidifier':
-        return const Icon(Icons.cloudy_snowing);
-      case 'lock':
-        return const Icon(Icons.lock);
-      case 'number':
-        return const Icon(Icons.numbers);
-      case 'scene':
-        return const Icon(Icons.group_work);
-      case 'siren':
-        return const Icon(Icons.speaker);
-      case 'select':
-        return const Icon(Icons.select_all);
-      case 'text':
-        return const Icon(Icons.text_fields);
-      case 'vacuum':
-        return const Icon(Icons.cleaning_services);
+      // case 'alarm_control_panel':
+      //   return const Icon(Icons.alarm);
+      // case 'button':
+      //   return const Icon(Icons.smart_button);
+      // case 'camera':
+      //   return const Icon(Icons.camera);
+      // case 'device_automation':
+      //   return const Icon(Icons.settings);
+      // case 'device_tracker':
+      //   return const Icon(Icons.developer_board);
+      // case 'humidifier':
+      //   return const Icon(Icons.cloudy_snowing);
+      // case 'lock':
+      //   return const Icon(Icons.lock);
+      // case 'number':
+      //   return const Icon(Icons.numbers);
+      // case 'scene':
+      //   return const Icon(Icons.group_work);
+      // case 'siren':
+      //   return const Icon(Icons.speaker);
+      // case 'select':
+      //   return const Icon(Icons.select_all);
+      // case 'text':
+      //   return const Icon(Icons.text_fields);
+      // case 'vacuum':
+      //   return const Icon(Icons.cleaning_services);
+      default:
     }
     return const Icon(Icons.question_mark);
   }
@@ -164,7 +166,7 @@ class _HubMQTTState extends State<HubMQTT> {
       child: ListTile(
         selectedColor: Colors.white,
         selected: device == selectedDevice,
-        leading: _getComponentIcon(device.type),
+        leading: _getComponentIcon(device.purpose ?? DevicePurpose.unknown),
         onTap: () => setState(() {
           selectedDevice = device;
           selectedTopic = null;
@@ -281,6 +283,7 @@ class _HubMQTTState extends State<HubMQTT> {
     debugPrint('_queryMQTT ${hostname.text} ${username.text} ${'*' * password.text.length}');
     setState(() {
       selectedDevice = null;
+      selectedTopic = null;
       appStatus = AppStatus.connecting;
     });
 

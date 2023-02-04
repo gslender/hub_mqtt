@@ -22,4 +22,12 @@ class Utils {
 
   static String limitString(String payloadStr, int i) =>
       payloadStr.length < i ? payloadStr : '${payloadStr.substring(0, min(i, payloadStr.length))}...';
+
+  static bool containsIgnoreCase<T>(Iterable<String> strings, String match) {
+    final String m = match.toLowerCase();
+    for (String s in strings) {
+      if (s.toLowerCase() == m) return true;
+    }
+    return false;
+  }
 }

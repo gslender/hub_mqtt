@@ -121,8 +121,9 @@ class MqttDiscovery {
         if (_mapDevices.containsKey(id)) {
           // concat devices
           mqttDevice = _mapDevices[id];
-          mqttDevice?.addTopicCfgJson(topicStr, jsonCfg);
-          mqttDevice?.addType(topicParts.componentTopic);
+          mqttDevice?.addTopicCfgJson(topicParts, jsonCfg);
+          mqttDevice?.addCapability(topicParts.componentTopic);
+          mqttDevice?.determinePurpose();
           // attrVal.forEach((key, value) {
           //   if (key.startsWith('device_')) prefix = '';
           //   mqttDevice?.addAttribValue('$prefix$key', value);
@@ -130,13 +131,18 @@ class MqttDiscovery {
         } else {
           // new device
           String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicStr;
+          String manufacturer = pick(jsonCfg, 'device', 'manufacturer').asStringOrNull() ?? '';
+          String model = pick(jsonCfg, 'device', 'model').asStringOrNull() ?? '';
+          String cfgUrl = pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '';
+          String swVer = pick(jsonCfg, 'device', 'sw_version').asStringOrNull() ?? '';
+          String hwVer = pick(jsonCfg, 'device', 'hw_version').asStringOrNull() ?? '';
           mqttDevice = MqttDevice(
             id: id,
             name: name,
-            label: name,
-            type: topicParts.componentTopic,
+            type: model.isEmpty ? manufacturer : '$manufacturer $model',
+            label: '${'$swVer $hwVer'.trim()} $cfgUrl'.trim(),
           );
-          mqttDevice.addTopicCfgJson(topicStr, jsonCfg);
+          mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
           // attrVal.forEach((key, value) {
           //   if (key.startsWith('device_')) prefix = '';
           //   mqttDevice?.addAttribValue('$prefix$key', value);
@@ -212,9 +218,6 @@ class MqttDiscovery {
         json[key] = value;
       }
     });
-
-    // Map<String, dynamic> attrVal = {};
-    // _convertJsonToAttribValue(attrVal, json, '${topicParts.componentTopic}_config');
     return json;
   }
 
@@ -305,4 +308,7 @@ class MqttTopicParts {
   String nodeIdTopic = '';
   String objectIdTopic = '';
   String configTopic = '';
+
+  @override
+  String toString() => origTopic;
 }
