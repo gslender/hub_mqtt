@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   mqtt_client: ^9.7.4
   events_emitter: ^0.5.2
+  deep_pick: ^0.10.0
+  json_view: ^0.4.0
 
 dev_dependencies:
   flutter_test:

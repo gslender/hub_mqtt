@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_discovery.dart';
+import 'package:json_view/json_view.dart';
 
 const String apptitle = 'hub_mqtt';
 
@@ -34,13 +33,14 @@ class _HubMQTTState extends State<HubMQTT> {
   final List<MqttDevice> _devices = [];
   final MqttDiscovery discovery = MqttDiscovery();
   MqttDevice? selectedDevice;
+  String? selectedTopic;
 
   @override
   void initState() {
     super.initState();
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (selectedDevice != null) setState(() {});
-    });
+    // Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    //   if (selectedDevice != null) setState(() {});
+    // });
   }
 
   @override
@@ -165,7 +165,10 @@ class _HubMQTTState extends State<HubMQTT> {
         selectedColor: Colors.white,
         selected: device == selectedDevice,
         leading: _getComponentIcon(device.type),
-        onTap: () => selectedDevice = device,
+        onTap: () => setState(() {
+          selectedDevice = device;
+          selectedTopic = null;
+        }),
         title: Text(device.name),
         subtitle: Text('type:${device.type} id:${device.id}'),
       ),
@@ -174,17 +177,39 @@ class _HubMQTTState extends State<HubMQTT> {
 
   Widget _mqttSelectedDeviceDetails() {
     if (selectedDevice == null) return Container();
-    return Column(
-        children: selectedDevice
-                ?.getTopics()
-                .map<Widget>((e) => Container(
-                      padding: const EdgeInsets.all(2),
-                      alignment: Alignment.centerLeft,
-                      child: Text(e),
-                    ))
-                .toList() ??
-            []);
+    return ListView.builder(
+        shrinkWrap: true,
+        itemCount: 1 + (selectedDevice?.getTopics().length ?? 0),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Card(
+              color: selectedTopic == null ? Colors.black54 : null,
+              child: ListTile(
+                leading: const Icon(Icons.chevron_right),
+                dense: true,
+                selectedColor: Colors.white,
+                selected: selectedTopic == null,
+                onTap: () => setState(() => selectedTopic = null),
+                title: const Text('Attributes and Variables'),
+              ),
+            );
+          }
+          String? topic = selectedDevice?.getTopics()[index - 1];
+          return Card(
+            color: topic == selectedTopic ? Colors.black54 : null,
+            child: ListTile(
+              leading: const Icon(Icons.chevron_right),
+              dense: true,
+              selectedColor: Colors.white,
+              selected: topic == selectedTopic,
+              onTap: () => setState(() => selectedTopic = topic),
+              title: Text('Config JSON: $topic'),
+            ),
+          );
+        });
   }
+
+  // JsonView(json: data)
 
   List<TableRow> _mqttSelectedDeviceAttribValues() {
     if (selectedDevice == null) return [];
@@ -227,13 +252,18 @@ class _HubMQTTState extends State<HubMQTT> {
                     const SizedBox(height: 8),
                     Expanded(
                       child: Card(
-                        elevation: 5,
-                        child: SingleChildScrollView(
-                          child: Table(
-                            children: [..._mqttSelectedDeviceAttribValues()],
-                          ),
-                        ),
-                      ),
+                          elevation: 5,
+                          child: selectedTopic == null
+                              ? SingleChildScrollView(
+                                  child: Table(
+                                  children: [..._mqttSelectedDeviceAttribValues()],
+                                ))
+                              : Container(
+                                  padding: const EdgeInsets.all(4),
+                                  child: JsonConfig(
+                                    data: JsonConfigData(style: const JsonStyleScheme(depth: 2)),
+                                    child: JsonView(json: selectedDevice?.getTopicJson(selectedTopic)),
+                                  ))),
                     ),
                   ],
                 ),

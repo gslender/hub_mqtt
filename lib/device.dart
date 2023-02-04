@@ -2,9 +2,10 @@ class Device {
   Device({
     required this.id,
     required this.name,
-    required this.type,
-    this.label = '',
-  }) {
+    required String type,
+    String label = '',
+  })  : _label = label,
+        _type = type {
     _mapAttribValues['_name'] = name;
     _mapAttribValues['_label'] = label;
     _mapAttribValues['_id'] = id;
@@ -14,29 +15,44 @@ class Device {
   Device.notfound()
       : id = 'notfound',
         name = '',
-        label = '',
-        type = '';
+        _label = '',
+        _type = '';
 
   final String id;
-  final String label;
   int lastupdated = 0;
   final String name;
-  final String type;
+  String _label;
+  String _type;
 
   final Set<String> _commands = {};
   final Map<String, String> _mapAttribValues = {};
 
+  String get label => _label;
+  set label(String label) {
+    _mapAttribValues['_label'] = label;
+    _label = label;
+  }
+
+  String get type => _type;
+
+  addType(String type) {
+    List<String> types = _type.split(',');
+    if (types.contains(type)) return;
+    _mapAttribValues['_type'] = '$_type,$type';
+    _type = '$_type,$type';
+  }
+
   @override
   String toString() {
-    return 'id:$id name:$name label:$label type:$type _mapAttribValues:$_mapAttribValues';
+    return 'id:$id name:$name label:$_label type:$_type _mapAttribValues:$_mapAttribValues';
   }
 
   factory Device.clone(Device copy, {String? room}) {
     final hd = Device(
       id: copy.id,
       name: copy.name,
-      type: copy.type,
-      label: copy.label,
+      type: copy._type,
+      label: copy._label,
     );
     hd._commands.addAll(copy._commands);
     hd._mapAttribValues.addAll(copy._mapAttribValues);

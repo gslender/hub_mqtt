@@ -10,14 +10,16 @@ class MqttDevice extends Device {
     required String type,
   }) : super(id: id, name: name, label: label, type: type);
 
-  List<String> _topics = [];
+  final Map<String, dynamic> _topicCfgs = {};
 
   factory MqttDevice.invalid([String? name]) =>
       MqttDevice(id: kInvalid, name: name ?? kInvalid, label: kInvalid, type: kInvalid);
 
   bool isInvalid(MqttDevice device) => device.id == kInvalid && device.type == kInvalid;
 
-  void addTopic(String topicStr) => _topics.contains(topicStr) ? null : _topics.add(topicStr);
+  void addTopicCfgJson(String topicStr, dynamic cfgJson) => _topicCfgs[topicStr] = cfgJson;
 
-  List<String> getTopics() => _topics;
+  List<String> getTopics() => _topicCfgs.keys.toList();
+
+  dynamic getTopicJson(String? topic) => _topicCfgs[topic];
 }

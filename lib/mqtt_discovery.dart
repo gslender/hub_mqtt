@@ -7,6 +7,7 @@ import 'package:hub_mqtt/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:events_emitter/events_emitter.dart';
+import 'package:deep_pick/deep_pick.dart';
 
 class MqttDiscovery {
   final Map<String, MqttDevice> _mapDevices = {};
@@ -105,52 +106,52 @@ class MqttDiscovery {
   }
 
   void _processConfigTopic(String topicStr, String payloadStr) {
-    Map<String, String> attrVal = _attrValFromTopicConfig(topicStr, payloadStr);
-    if (attrVal.containsKey(MqttDevice.kInvalid)) {
-      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(attrVal[MqttDevice.kInvalid]);
+    MqttTopicParts topicParts = _getPartsFromTopic(topicStr);
+    dynamic jsonCfg = _convertPayloadCfgJson(topicParts, payloadStr);
+    if (jsonCfg.containsKey(MqttDevice.kInvalid)) {
+      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(jsonCfg[MqttDevice.kInvalid]);
     } else {
-      MqttTopicParts parts = _getPartsFromTopic(topicStr);
-      String id = attrVal['device_identifiers'] ?? MqttDevice.kInvalid;
+      String id = pick(jsonCfg, 'device', 'identifiers').asStringOrNull() ?? MqttDevice.kInvalid;
       if (id == MqttDevice.kInvalid) {
         _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] =
             MqttDevice.invalid('INVALID DEVICE_ID $topicStr');
       } else {
         MqttDevice? mqttDevice;
-        String prefix = '${parts.objectIdTopic}_';
+        String prefix = '${topicParts.objectIdTopic}_';
         if (_mapDevices.containsKey(id)) {
           // concat devices
           mqttDevice = _mapDevices[id];
-          mqttDevice?.addTopic(topicStr);
-          attrVal.forEach((key, value) {
-            if (key.startsWith('device_')) prefix = '';
-            mqttDevice?.addAttribValue('$prefix$key', value);
-          });
+          mqttDevice?.addTopicCfgJson(topicStr, jsonCfg);
+          mqttDevice?.addType(topicParts.componentTopic);
+          // attrVal.forEach((key, value) {
+          //   if (key.startsWith('device_')) prefix = '';
+          //   mqttDevice?.addAttribValue('$prefix$key', value);
+          // });
         } else {
           // new device
-          // String name = '${attrVal['device_name'] ?? topicStr} ${parts.componentTopic}';
+          String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicStr;
           mqttDevice = MqttDevice(
             id: id,
-            name: attrVal['device_name'] ?? topicStr,
-            label: topicStr,
-            type: _componentFromTopic(topicStr),
+            name: name,
+            label: name,
+            type: topicParts.componentTopic,
           );
-          mqttDevice.addTopic(topicStr);
-          attrVal.forEach((key, value) {
-            if (key.startsWith('device_')) prefix = '';
-            mqttDevice?.addAttribValue('$prefix$key', value);
-          });
-          mqttDevice.addAttribValue('topic', topicStr);
+          mqttDevice.addTopicCfgJson(topicStr, jsonCfg);
+          // attrVal.forEach((key, value) {
+          //   if (key.startsWith('device_')) prefix = '';
+          //   mqttDevice?.addAttribValue('$prefix$key', value);
+          // });
           _mapDevices[id] = mqttDevice;
         }
 
-        if (mqttDevice != null) {
-          // now check MqttSubscriptionStatus of the state_topic,
-          // availability_topic,command_topic and json_attributes_topic
-          _subScribe(mqttDevice, '_state_topic');
-          _subScribe(mqttDevice, '_availability_topic');
-          _subScribe(mqttDevice, '_command_topic');
-          _subScribe(mqttDevice, '_json_attributes_topic');
-        }
+        // if (mqttDevice != null) {
+        //   // now check MqttSubscriptionStatus of the state_topic,
+        //   // availability_topic,command_topic and json_attributes_topic
+        //   _subScribe(mqttDevice, '_state_topic');
+        //   _subScribe(mqttDevice, '_availability_topic');
+        //   _subScribe(mqttDevice, '_command_topic');
+        //   _subScribe(mqttDevice, '_json_attributes_topic');
+        // }
       }
     }
   }
@@ -182,33 +183,65 @@ class MqttDiscovery {
     });
   }
 
-  Map<String, String> _attrValFromTopicConfig(String topic, String config) {
+  Map<String, dynamic> _convertPayloadCfgJson(MqttTopicParts topicParts, String config) {
     if (!Utils.isValidJson(config)) {
-      print('!!! INVALID CONFIG !!! - $config');
-      return {MqttDevice.kInvalid: 'INVALID CONFIG $topic'};
+      return {MqttDevice.kInvalid: 'INVALID CONFIG ${topicParts.origTopic}'};
     }
-    String component = _componentFromTopic(topic);
-    if (component == MqttDevice.kInvalid) {
-      print('!!! INVALID COMPONENT !!! - $topic');
-      return {MqttDevice.kInvalid: 'INVALID COMPONENT $topic'};
+    if (!kSupportedComponents.contains(topicParts.componentTopic)) {
+      return {MqttDevice.kInvalid: 'INVALID COMPONENT ${topicParts.componentTopic}'};
     }
 
     final Map<String, dynamic> json = {};
 
-    Utils.toJsonMap(config).forEach((key, value) {
-      if (kAbbreviations.containsKey(key)) {
-        json[kAbbreviations[key]!] = value;
+    Utils.toJsonMap(config).forEach((k, value) {
+      String key = k;
+      if (kAbbreviations.containsKey(k)) {
+        key = kAbbreviations[k] ?? k;
+      }
+      if (key == 'device' && value is Map<String, dynamic>) {
+        final Map<String, dynamic> devJson = {};
+        value.forEach((dkey, dvalue) {
+          if (kDeviceAbbreviations.containsKey(dkey)) {
+            devJson[kDeviceAbbreviations[dkey]!] = dvalue;
+          } else {
+            devJson[dkey] = dvalue;
+          }
+        });
+        json[key] = devJson;
       } else {
         json[key] = value;
       }
     });
 
-    Map<String, String> attrVal = {};
-    _convertJsonToAttribValue(attrVal, json, 'config');
-
-    return attrVal;
+    // Map<String, dynamic> attrVal = {};
+    // _convertJsonToAttribValue(attrVal, json, '${topicParts.componentTopic}_config');
+    return json;
   }
 
+  void _convertJsonToAttribValue(Map<String, dynamic> attrVal, Map<String, dynamic> json, String prefix) {
+    json.forEach((k, v) {
+      String key = k;
+
+      Map<String, String> abbrev = kAbbreviations;
+      // if (prefix.endsWith('device')) abbrev = kDeviceAbbreviations;
+
+      if (abbrev.containsKey(k)) {
+        key = abbrev[k]!;
+      }
+      String value = v.toString();
+      if (value.startsWith('{') && value.endsWith('}')) {
+        if (v is Map<String, dynamic>) {
+          _convertJsonToAttribValue(attrVal, v, '${prefix}_$key');
+        } else {
+          //TODO unhandled do we need to do anything prior to templates ??
+          attrVal['${prefix}_$key'] = value;
+        }
+      } else {
+        attrVal['${prefix}_$key'] = value.toString();
+      }
+    });
+  }
+/*
   void _convertJsonToAttribValue(Map<String, String> attrVal, Map<String, dynamic> json, String prefix) {
     json.forEach((k, v) {
       String key = k;
@@ -231,7 +264,7 @@ class MqttDiscovery {
         attrVal['${prefix}_$key'] = value.toString();
       }
     });
-  }
+  }*/
 
   String attribNameFromTopic(String topic) {
     if (topic.contains('/')) {
@@ -241,16 +274,8 @@ class MqttDiscovery {
     return MqttDevice.kInvalid;
   }
 
-  String _componentFromTopic(String topic) {
-    if (topic.contains('/')) {
-      List<String> leafs = topic.split('/');
-      if (kSupportedComponents.contains(leafs[1])) return leafs[1];
-    }
-    return MqttDevice.kInvalid;
-  }
-
   MqttTopicParts _getPartsFromTopic(String topicStr) {
-    MqttTopicParts topicParts = MqttTopicParts();
+    MqttTopicParts topicParts = MqttTopicParts(topicStr);
     topicParts.configTopic = MqttDevice.kInvalid;
     if (topicStr.contains('/')) {
       List<String> leafs = topicStr.split('/');
@@ -273,6 +298,8 @@ class MqttDiscovery {
 }
 
 class MqttTopicParts {
+  MqttTopicParts(this.origTopic);
+  String origTopic = '';
   String discoveryTopic = '';
   String componentTopic = '';
   String nodeIdTopic = '';
