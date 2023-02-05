@@ -123,7 +123,7 @@ class MqttDiscovery {
           mqttDevice = _mapDevices[id];
           mqttDevice?.addTopicCfgJson(topicParts, jsonCfg);
           mqttDevice?.addCapability(topicParts.componentTopic);
-          mqttDevice?.determinePurpose();
+          mqttDevice?.addAttribValue('_purpose', mqttDevice.determinePurpose().toString());
           // attrVal.forEach((key, value) {
           //   if (key.startsWith('device_')) prefix = '';
           //   mqttDevice?.addAttribValue('$prefix$key', value);
@@ -131,18 +131,23 @@ class MqttDiscovery {
         } else {
           // new device
           String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicStr;
-          String manufacturer = pick(jsonCfg, 'device', 'manufacturer').asStringOrNull() ?? '';
-          String model = pick(jsonCfg, 'device', 'model').asStringOrNull() ?? '';
-          String cfgUrl = pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '';
-          String swVer = pick(jsonCfg, 'device', 'sw_version').asStringOrNull() ?? '';
-          String hwVer = pick(jsonCfg, 'device', 'hw_version').asStringOrNull() ?? '';
           mqttDevice = MqttDevice(
             id: id,
             name: name,
-            type: model.isEmpty ? manufacturer : '$manufacturer $model',
-            label: '${'$swVer $hwVer'.trim()} $cfgUrl'.trim(),
+            type: '',
+            label: '',
           );
           mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
+          mqttDevice.addCapability(topicParts.componentTopic);
+          mqttDevice.addAttribValue('_purpose', mqttDevice.determinePurpose().toString());
+          mqttDevice.addAttribValue('device_hw_version', pick(jsonCfg, 'device', 'hw_version').asStringOrNull() ?? '');
+          mqttDevice.addAttribValue('device_sw_version', pick(jsonCfg, 'device', 'sw_version').asStringOrNull() ?? '');
+          mqttDevice.addAttribValue(
+              'device_manufacturer', pick(jsonCfg, 'device', 'manufacturer').asStringOrNull() ?? '');
+          mqttDevice.addAttribValue('device_model', pick(jsonCfg, 'device', 'model').asStringOrNull() ?? '');
+          mqttDevice.addAttribValue(
+              'device_configuration_url', pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '');
+
           // attrVal.forEach((key, value) {
           //   if (key.startsWith('device_')) prefix = '';
           //   mqttDevice?.addAttribValue('$prefix$key', value);
@@ -150,14 +155,14 @@ class MqttDiscovery {
           _mapDevices[id] = mqttDevice;
         }
 
-        // if (mqttDevice != null) {
-        //   // now check MqttSubscriptionStatus of the state_topic,
-        //   // availability_topic,command_topic and json_attributes_topic
-        //   _subScribe(mqttDevice, '_state_topic');
-        //   _subScribe(mqttDevice, '_availability_topic');
-        //   _subScribe(mqttDevice, '_command_topic');
-        //   _subScribe(mqttDevice, '_json_attributes_topic');
-        // }
+        if (mqttDevice != null) {
+          // now check MqttSubscriptionStatus of the state_topic,
+          // availability_topic,command_topic and json_attributes_topic
+          _subScribe(mqttDevice, 'state_topic');
+          _subScribe(mqttDevice, 'availability_topic');
+          _subScribe(mqttDevice, 'command_topic');
+          _subScribe(mqttDevice, 'json_attributes_topic');
+        }
       }
     }
   }
@@ -171,6 +176,25 @@ class MqttDiscovery {
   }
 
   void _subScribe(MqttDevice mqttDevice, String partTopic) {
+    for (String topic in mqttDevice.getTopics()) {
+      dynamic json = mqttDevice.getTopicJson(topic);
+      json.forEach((key, topic) {
+        if (key.endsWith(partTopic)) {
+          events.on<String>(topic, (String data) {
+            print('topic $topic data $data');
+            if (data.startsWith('{')) {
+              _addJsonAttrToMqttDevice(mqttDevice, attribNameFromTopic(topic), Utils.toJsonMap(data));
+            } else {
+              mqttDevice.addAttribValue(attribNameFromTopic(topic), data);
+            }
+          });
+          if (mqttClient!.getSubscriptionsStatus(topic) != MqttSubscriptionStatus.active) {
+            mqttClient!.subscribe(topic, MqttQos.atMostOnce);
+          }
+        }
+      });
+    }
+/*
     final attribValues = mqttDevice.getImmutableAttribValues();
     if (mqttClient?.connectionStatus?.state != MqttConnectionState.connected) return;
     attribValues.forEach((key, topic) {
@@ -186,7 +210,7 @@ class MqttDiscovery {
           mqttClient!.subscribe(topic, MqttQos.atMostOnce);
         }
       }
-    });
+    });*/
   }
 
   Map<String, dynamic> _convertPayloadCfgJson(MqttTopicParts topicParts, String config) {

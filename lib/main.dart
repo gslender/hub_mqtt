@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/device.dart';
+import 'package:hub_mqtt/device_attribute_widget.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_discovery.dart';
@@ -39,9 +40,6 @@ class _HubMQTTState extends State<HubMQTT> {
   @override
   void initState() {
     super.initState();
-    // Timer.periodic(const Duration(milliseconds: 100), (timer) {
-    //   if (selectedDevice != null) setState(() {});
-    // });
   }
 
   @override
@@ -172,10 +170,12 @@ class _HubMQTTState extends State<HubMQTT> {
           selectedTopic = null;
         }),
         title: Text(device.name),
-        subtitle: Text('type:${device.type} id:${device.id}'),
+        subtitle: Text('purpose:${_shortPurpose(device.determinePurpose())} id:${device.id}'),
       ),
     );
   }
+
+  String _shortPurpose(DevicePurpose purpose) => purpose.toString().split('.').last.substring(1);
 
   Widget _mqttSelectedDeviceDetails() {
     if (selectedDevice == null) return Container();
@@ -211,20 +211,6 @@ class _HubMQTTState extends State<HubMQTT> {
         });
   }
 
-  // JsonView(json: data)
-
-  List<TableRow> _mqttSelectedDeviceAttribValues() {
-    if (selectedDevice == null) return [];
-    List<TableRow> table = [];
-    selectedDevice!.getImmutableAttribValues().forEach((key, value) {
-      table.add(TableRow(children: [
-        Text(key),
-        Text(value),
-      ]));
-    });
-    return table;
-  }
-
   Widget _deviceListProgress() {
     switch (appStatus) {
       case AppStatus.failed:
@@ -257,8 +243,9 @@ class _HubMQTTState extends State<HubMQTT> {
                           elevation: 5,
                           child: selectedTopic == null
                               ? SingleChildScrollView(
-                                  child: Table(
-                                  children: [..._mqttSelectedDeviceAttribValues()],
+                                  child: DeviceAttributeWidget(
+                                  key: UniqueKey(),
+                                  selectedDevice: selectedDevice!,
                                 ))
                               : Container(
                                   padding: const EdgeInsets.all(4),

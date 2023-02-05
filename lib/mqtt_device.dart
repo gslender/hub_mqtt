@@ -51,8 +51,28 @@ class MqttDevice extends Device {
     if (validCapabilities.contains('light')) return DevicePurpose.aLight;
     if (validCapabilities.contains('switch')) return DevicePurpose.aSwitch;
     if (validCapabilities.contains('fan')) return DevicePurpose.aFan;
+
+    ///
+    if (validCapabilities.contains('climate')) return DevicePurpose.aThermostat;
     if (validCapabilities.contains('cover')) return DevicePurpose.aBlind;
+
+    ///
+    if (validCapabilities.contains('camera')) return DevicePurpose.aCamera;
+    if (validCapabilities.contains('lock')) return DevicePurpose.aLock;
+    if (validCapabilities.contains('binary_sensor')) return DevicePurpose.aSensor;
     if (validCapabilities.contains('sensor')) return DevicePurpose.aSensor;
+    if (validCapabilities.contains('button')) return DevicePurpose.aButton;
+    if (validCapabilities.contains('device_automation')) return DevicePurpose.aDeviceAutomation;
+    if (validCapabilities.contains('device_tracker')) return DevicePurpose.aDeviceTracker;
+    if (validCapabilities.contains('humidifier')) return DevicePurpose.aHumidifier;
+    if (validCapabilities.contains('number')) return DevicePurpose.aNumber;
+    if (validCapabilities.contains('scene')) return DevicePurpose.aScene;
+    if (validCapabilities.contains('siren')) return DevicePurpose.aSiren;
+    if (validCapabilities.contains('select')) return DevicePurpose.aSelect;
+    if (validCapabilities.contains('tag')) return DevicePurpose.aTag;
+    if (validCapabilities.contains('text')) return DevicePurpose.aText;
+    if (validCapabilities.contains('update')) return DevicePurpose.aUpdate;
+    if (validCapabilities.contains('vacuum')) return DevicePurpose.aVacuum;
     return DevicePurpose.unknown;
   }
 }

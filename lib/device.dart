@@ -1,6 +1,31 @@
 import 'package:hub_mqtt/utils.dart';
 
-enum DevicePurpose { aLight, aBlind, aSwitch, aFan, aSolar, aThermostat, aSensor, aDoor, aLock, unknown, aBinarySensor }
+enum DevicePurpose {
+  aLight,
+  aBlind,
+  aSwitch,
+  aFan,
+  aSolar,
+  aThermostat,
+  aSensor,
+  aDoor,
+  aLock,
+  aBinarySensor,
+  aCamera,
+  aButton,
+  aDeviceAutomation,
+  aDeviceTracker,
+  aHumidifier,
+  aNumber,
+  aScene,
+  aSiren,
+  aSelect,
+  aTag,
+  aText,
+  aUpdate,
+  aVacuum,
+  unknown,
+}
 
 class Device {
   Device({
@@ -60,7 +85,6 @@ class Device {
   bool purposeIsUnknown() => purpose == DevicePurpose.unknown;
 
   DevicePurpose determinePurpose() {
-    purpose = DevicePurpose.unknown;
     purpose = guessPurposeFromCapability();
     if (purposeIsUnknown()) purpose = guessPurposeFromTxt(type);
     if (purposeIsUnknown()) purpose = guessPurposeFromTxt(label);
