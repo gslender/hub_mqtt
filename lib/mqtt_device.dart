@@ -65,9 +65,9 @@ class MqttDevice extends Device {
     if (validCapabilities.contains('select')) return DevicePurpose.aSelect;
     if (validCapabilities.contains('tag')) return DevicePurpose.aTag;
     if (validCapabilities.contains('text')) return DevicePurpose.aText;
-    if (validCapabilities.contains('update')) return DevicePurpose.aUpdate;
     if (validCapabilities.contains('binary_sensor')) return DevicePurpose.aSensor;
     if (validCapabilities.contains('sensor')) return DevicePurpose.aSensor;
+    if (validCapabilities.contains('update')) return DevicePurpose.aUpdate;
     return DevicePurpose.unknown;
   }
 }

@@ -179,36 +179,38 @@ class _HubMQTTState extends State<HubMQTT> {
 
   Widget _mqttSelectedDeviceDetails() {
     if (selectedDevice == null) return Container();
-    return ListView.builder(
-        shrinkWrap: true,
-        itemCount: 1 + (selectedDevice?.getTopics().length ?? 0),
-        itemBuilder: (context, index) {
-          if (index == 0) {
+    return SingleChildScrollView(
+      child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: 1 + (selectedDevice?.getTopics().length ?? 0),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Card(
+                color: selectedTopic == null ? Colors.black54 : null,
+                child: ListTile(
+                  leading: const Icon(Icons.chevron_right),
+                  dense: true,
+                  selectedColor: Colors.white,
+                  selected: selectedTopic == null,
+                  onTap: () => setState(() => selectedTopic = null),
+                  title: const Text('Attributes and Variables'),
+                ),
+              );
+            }
+            String? topic = selectedDevice?.getTopics()[index - 1];
             return Card(
-              color: selectedTopic == null ? Colors.black54 : null,
+              color: topic == selectedTopic ? Colors.black54 : null,
               child: ListTile(
                 leading: const Icon(Icons.chevron_right),
                 dense: true,
                 selectedColor: Colors.white,
-                selected: selectedTopic == null,
-                onTap: () => setState(() => selectedTopic = null),
-                title: const Text('Attributes and Variables'),
+                selected: topic == selectedTopic,
+                onTap: () => setState(() => selectedTopic = topic),
+                title: Text('Config JSON: $topic'),
               ),
             );
-          }
-          String? topic = selectedDevice?.getTopics()[index - 1];
-          return Card(
-            color: topic == selectedTopic ? Colors.black54 : null,
-            child: ListTile(
-              leading: const Icon(Icons.chevron_right),
-              dense: true,
-              selectedColor: Colors.white,
-              selected: topic == selectedTopic,
-              onTap: () => setState(() => selectedTopic = topic),
-              title: Text('Config JSON: $topic'),
-            ),
-          );
-        });
+          }),
+    );
   }
 
   Widget _deviceListProgress() {
@@ -236,9 +238,16 @@ class _HubMQTTState extends State<HubMQTT> {
                 alignment: Alignment.topCenter,
                 child: Column(
                   children: [
-                    Card(elevation: 5, child: _mqttSelectedDeviceDetails()),
-                    const SizedBox(height: 8),
-                    Expanded(
+                    Flexible(
+                        flex: 1,
+                        fit: FlexFit.tight,
+                        child: Card(
+                          elevation: 5,
+                          child: _mqttSelectedDeviceDetails(),
+                        )),
+                    Flexible(
+                      flex: 1,
+                      fit: FlexFit.tight,
                       child: Card(
                           elevation: 5,
                           child: selectedTopic == null
