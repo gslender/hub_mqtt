@@ -243,10 +243,12 @@ class _HubMQTTState extends State<HubMQTT> {
                           elevation: 5,
                           child: selectedTopic == null
                               ? SingleChildScrollView(
-                                  child: DeviceAttributeWidget(
-                                  key: UniqueKey(),
-                                  selectedDevice: selectedDevice!,
-                                ))
+                                  child: selectedDevice != null
+                                      ? DeviceAttributeWidget(
+                                          key: UniqueKey(),
+                                          selectedDevice: selectedDevice!,
+                                        )
+                                      : Container())
                               : Container(
                                   padding: const EdgeInsets.all(4),
                                   child: JsonConfig(
