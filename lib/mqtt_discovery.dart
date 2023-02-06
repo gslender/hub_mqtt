@@ -109,12 +109,16 @@ class MqttDiscovery {
     MqttTopicParts topicParts = _getPartsFromTopic(topicStr);
     dynamic jsonCfg = _convertPayloadCfgJson(topicParts, payloadStr);
     if (jsonCfg.containsKey(MqttDevice.kInvalid)) {
-      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = MqttDevice.invalid(jsonCfg[MqttDevice.kInvalid]);
+      MqttDevice mqttDevice = MqttDevice.invalid('INVALID CONFIG JSON $topicStr');
+      mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
+      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = mqttDevice;
     } else {
       String id = pick(jsonCfg, 'device', 'identifiers').asStringOrNull() ?? MqttDevice.kInvalid;
+      if (id == MqttDevice.kInvalid) id = pick(jsonCfg, 'unique_id').asStringOrNull() ?? MqttDevice.kInvalid;
       if (id == MqttDevice.kInvalid) {
-        _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] =
-            MqttDevice.invalid('INVALID DEVICE_ID $topicStr');
+        MqttDevice mqttDevice = MqttDevice.invalid('INVALID DEVICE_ID $topicStr');
+        mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
+        _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = mqttDevice;
       } else {
         MqttDevice? mqttDevice;
         String prefix = '${topicParts.objectIdTopic}_';
@@ -181,7 +185,7 @@ class MqttDiscovery {
       json.forEach((key, topic) {
         if (key.endsWith(partTopic)) {
           events.on<String>(topic, (String data) {
-            print('topic $topic data $data');
+            // print('topic $topic data $data');
             if (data.startsWith('{')) {
               _addJsonAttrToMqttDevice(mqttDevice, attribNameFromTopic(topic), Utils.toJsonMap(data));
             } else {

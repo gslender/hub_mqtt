@@ -43,7 +43,9 @@ class MqttDevice extends Device {
     List<String> validCapabilities = [];
     _topicCfgs.forEach((key, value) {
       String entityCategory = pick(value, 'entity_category').asStringOrNull() ?? '';
+      String deviceClass = pick(value, 'device_class').asStringOrNull() ?? '';
       if (entityCategory == 'diagnostic' || entityCategory == 'config') return;
+      if (deviceClass == 'firmware') return;
       validCapabilities.add(key.componentTopic);
     });
     if (validCapabilities.isEmpty) validCapabilities = getCapabilities().toList();
@@ -53,6 +55,7 @@ class MqttDevice extends Device {
     if (validCapabilities.contains('camera')) return DevicePurpose.aCamera;
     if (validCapabilities.contains('lock')) return DevicePurpose.aLock;
     if (validCapabilities.contains('device_automation')) return DevicePurpose.aDeviceAutomation;
+    if (validCapabilities.contains('alarm_control_panel')) return DevicePurpose.aAlarmControlPanel;
     if (validCapabilities.contains('device_tracker')) return DevicePurpose.aDeviceTracker;
     if (validCapabilities.contains('humidifier')) return DevicePurpose.aHumidifier;
     if (validCapabilities.contains('siren')) return DevicePurpose.aSiren;

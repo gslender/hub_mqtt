@@ -14,6 +14,7 @@ enum DevicePurpose {
   aCamera,
   aButton,
   aDeviceAutomation,
+  aAlarmControlPanel,
   aDeviceTracker,
   aHumidifier,
   aNumber,

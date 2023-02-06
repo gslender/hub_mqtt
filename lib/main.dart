@@ -115,44 +115,44 @@ class _HubMQTTState extends State<HubMQTT> {
         return const Icon(Icons.sensors);
       case DevicePurpose.aBinarySensor:
         return const Icon(Icons.sync_alt_rounded);
-      // case DevicePurpose.aTag:
-      //   return const Icon(Icons.label);
+      case DevicePurpose.aTag:
+        return const Icon(Icons.label);
       case DevicePurpose.aThermostat:
         return const Icon(Icons.device_thermostat);
       case DevicePurpose.aBlind:
         return const Icon(Icons.door_sliding);
-      // case 'update':
-      // return const Icon(Icons.update);
+      case DevicePurpose.aUpdate:
+        return const Icon(Icons.update);
       case DevicePurpose.aSwitch:
         return const Icon(Icons.toggle_off_outlined);
       case DevicePurpose.aFan:
         return const Icon(Icons.air);
-      // case 'alarm_control_panel':
-      //   return const Icon(Icons.alarm);
-      // case 'button':
-      //   return const Icon(Icons.smart_button);
-      // case 'camera':
-      //   return const Icon(Icons.camera);
-      // case 'device_automation':
-      //   return const Icon(Icons.settings);
-      // case 'device_tracker':
-      //   return const Icon(Icons.developer_board);
-      // case 'humidifier':
-      //   return const Icon(Icons.cloudy_snowing);
-      // case 'lock':
-      //   return const Icon(Icons.lock);
-      // case 'number':
-      //   return const Icon(Icons.numbers);
-      // case 'scene':
-      //   return const Icon(Icons.group_work);
-      // case 'siren':
-      //   return const Icon(Icons.speaker);
-      // case 'select':
-      //   return const Icon(Icons.select_all);
-      // case 'text':
-      //   return const Icon(Icons.text_fields);
-      // case 'vacuum':
-      //   return const Icon(Icons.cleaning_services);
+      case DevicePurpose.aCamera:
+        return const Icon(Icons.camera);
+      case DevicePurpose.aLock:
+        return const Icon(Icons.lock);
+      case DevicePurpose.aAlarmControlPanel:
+        return const Icon(Icons.alarm);
+      case DevicePurpose.aButton:
+        return const Icon(Icons.smart_button);
+      case DevicePurpose.aDeviceAutomation:
+        return const Icon(Icons.settings);
+      case DevicePurpose.aDeviceTracker:
+        return const Icon(Icons.developer_board);
+      case DevicePurpose.aHumidifier:
+        return const Icon(Icons.cloudy_snowing);
+      case DevicePurpose.aNumber:
+        return const Icon(Icons.numbers);
+      case DevicePurpose.aScene:
+        return const Icon(Icons.group_work);
+      case DevicePurpose.aSiren:
+        return const Icon(Icons.speaker);
+      case DevicePurpose.aSelect:
+        return const Icon(Icons.select_all);
+      case DevicePurpose.aText:
+        return const Icon(Icons.text_fields);
+      case DevicePurpose.aVacuum:
+        return const Icon(Icons.cleaning_services);
       default:
     }
     return const Icon(Icons.question_mark);
@@ -170,12 +170,13 @@ class _HubMQTTState extends State<HubMQTT> {
           selectedTopic = null;
         }),
         title: Text(device.name),
-        subtitle: Text('purpose:${_shortPurpose(device.determinePurpose())} id:${device.id}'),
+        subtitle: Text('purpose:${_shortPurpose(device.determinePurpose())}  ID:${device.id}'),
       ),
     );
   }
 
-  String _shortPurpose(DevicePurpose purpose) => purpose.toString().split('.').last.substring(1);
+  String _shortPurpose(DevicePurpose purpose) =>
+      purpose == DevicePurpose.unknown ? 'UNKNOWN!' : purpose.toString().split('.').last.substring(1);
 
   Widget _mqttSelectedDeviceDetails() {
     if (selectedDevice == null) return Container();
