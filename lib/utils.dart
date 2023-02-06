@@ -2,13 +2,15 @@ import 'dart:convert';
 import 'dart:math';
 
 class Utils {
+  // ignore: avoid_print
+  static logInfo(String msg) => print(msg);
   static bool isValidJson(String? jsonString, [bool debug = false]) {
     if (jsonString == null) return false;
     try {
       json.decode(jsonString) as Map<String, dynamic>;
       return true;
     } catch (e) {
-      if (debug) print(e);
+      if (debug) logInfo(e.toString());
     }
     return false;
   }

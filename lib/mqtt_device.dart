@@ -22,7 +22,7 @@ class MqttDevice extends Device {
   void addTopicCfgJson(MqttTopicParts topicParts, dynamic cfgJson) {
     bool skip = false;
     _topicCfgs.forEach((key, value) {
-      if (key.origTopic == topicParts.origTopic) skip = true;
+      if (key.fullOrigTopic == topicParts.fullOrigTopic) skip = true;
     });
     if (skip) return;
     _topicCfgs[topicParts] = cfgJson;
@@ -30,10 +30,12 @@ class MqttDevice extends Device {
 
   List<String> getTopics() => _topicCfgs.keys.map<String>((e) => e.toString()).toList();
 
+  Map<MqttTopicParts, dynamic> getTopicCfgJsons() => _topicCfgs;
+
   dynamic getTopicJson(String? topic) {
     dynamic json = {'config_json_empty': true};
     _topicCfgs.forEach((key, value) {
-      if (key.origTopic == topic) json = value;
+      if (key.fullOrigTopic == topic) json = value;
     });
     return json;
   }
@@ -46,7 +48,7 @@ class MqttDevice extends Device {
       String deviceClass = pick(value, 'device_class').asStringOrNull() ?? '';
       if (entityCategory == 'diagnostic' || entityCategory == 'config') return;
       if (deviceClass == 'firmware') return;
-      validCapabilities.add(key.componentTopic);
+      validCapabilities.add(key.componentNode);
     });
     if (validCapabilities.isEmpty) validCapabilities = getCapabilities().toList();
     if (validCapabilities.contains('fan')) return DevicePurpose.aFan;
