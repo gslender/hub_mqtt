@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:hub_mqtt/entities/mqtt_base_entity.dart';
 import 'package:hub_mqtt/ha_const.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/utils.dart';
@@ -106,119 +107,53 @@ class MqttDiscovery {
     });
   }
 
+  void addInvalidDevice(MqttDevice device) => _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = device;
+
   void _processConfigTopic(String topicStr, String payloadStr) {
-    MqttTopicParts topicParts = _getPartsFromTopic(topicStr);
-    dynamic jsonCfg = _convertPayloadCfgJson(topicParts, payloadStr);
+    if (!Utils.isValidJson(payloadStr)) {
+      addInvalidDevice(MqttDevice.invalid('INVALID JSON $topicStr'));
+      return;
+    }
+    dynamic jsonCfg = _convertPayloadCfgJson(payloadStr);
     if (jsonCfg.containsKey(MqttDevice.kInvalid)) {
-      MqttDevice mqttDevice = MqttDevice.invalid('INVALID CONFIG JSON $topicStr');
-      mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
-      _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = mqttDevice;
-    } else {
-      String id = pick(jsonCfg, 'device', 'identifiers').asStringOrNull() ?? MqttDevice.kInvalid;
-      if (id == MqttDevice.kInvalid) id = pick(jsonCfg, 'unique_id').asStringOrNull() ?? MqttDevice.kInvalid;
-      if (id == MqttDevice.kInvalid) {
-        MqttDevice mqttDevice = MqttDevice.invalid('INVALID DEVICE_ID $topicStr');
-        mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
-        _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = mqttDevice;
-      } else {
-        MqttDevice? mqttDevice;
-        if (_mapDevices.containsKey(id)) {
-          // concat devices
-          mqttDevice = _mapDevices[id];
-          mqttDevice?.addTopicCfgJson(topicParts, jsonCfg);
-          mqttDevice?.addCapability(topicParts.componentNode);
-          mqttDevice?.addAttribValue('_purpose', mqttDevice.determinePurpose().toString());
-        } else {
-          // new device
-          String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicStr;
-          mqttDevice = MqttDevice(
-            id: id,
-            name: name,
-            type: '',
-            label: '',
-          );
-          mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
-          mqttDevice.addCapability(topicParts.componentNode);
-          mqttDevice.addAttribValue('_purpose', mqttDevice.determinePurpose().toString());
-          mqttDevice.addAttribValue('device_hw_version', pick(jsonCfg, 'device', 'hw_version').asStringOrNull() ?? '');
-          mqttDevice.addAttribValue('device_sw_version', pick(jsonCfg, 'device', 'sw_version').asStringOrNull() ?? '');
-          mqttDevice.addAttribValue(
-              'device_manufacturer', pick(jsonCfg, 'device', 'manufacturer').asStringOrNull() ?? '');
-          mqttDevice.addAttribValue('device_model', pick(jsonCfg, 'device', 'model').asStringOrNull() ?? '');
-          mqttDevice.addAttribValue(
-              'device_configuration_url', pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '');
-          _mapDevices[id] = mqttDevice;
-        }
-
-        if (mqttDevice != null) {
-          // now subscribe to state_topic, availability_topic and json_attributes_topic
-          if (!_subScribeStateTopics(mqttDevice, 'state_topic')) _subScribeStateTopics(mqttDevice, 'topic');
-          // _subScribeTopics(mqttDevice, 'availability_topic');
-          // _subScribeTopics(mqttDevice, 'json_attributes_topic');
-
-          // now add command_topics
-          _addCommandTopics(mqttDevice);
-        }
-      }
+      addInvalidDevice(MqttDevice.invalid('INVALID CONFIG $topicStr'));
+      return;
     }
-  }
 
-  bool _subScribeStateTopics(MqttDevice mqttDevice, String jsonKey) {
-    bool hasStateTopic = false;
-    mqttDevice.getTopicCfgJsons().forEach((topicParts, json) {
-      json.forEach((cfgJsonKey, cfgJsonValue) {
-        if (cfgJsonKey == jsonKey) {
-          hasStateTopic = true;
-          events.on<String>(cfgJsonValue, (String data) {
-            String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}';
-            mqttDevice.addAttribValue(attrib, data);
-            Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
-          });
-          if (mqttClient!.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
-            mqttClient!.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
-          }
-        }
-      });
-    });
-    return hasStateTopic;
-  }
-
-/*
-  void _addJsonAttrToMqttDevice(MqttDevice mqttDevice, String attribName, Map<String, dynamic> json) {
-    json.forEach((key, value) {
-      String newAttribName = '${attribName}_$key';
-      if (value is Map<String, dynamic>) _addJsonAttrToMqttDevice(mqttDevice, newAttribName, value);
-      mqttDevice.addAttribValue(newAttribName, value.toString());
-    });
-  }
-  
-  String _attribNameFromTopic(String topic) {
-    if (topic.contains('/')) {
-      List<String> leafs = topic.split('/');
-      return '${leafs[leafs.length - 2]}_${leafs[leafs.length - 1]}';
-    }
-    return MqttDevice.kInvalid;
-  }
-*/
-  void _addCommandTopics(MqttDevice mqttDevice) {
-    for (String topic in mqttDevice.getTopics()) {
-      dynamic json = mqttDevice.getTopicJson(topic);
-      json.forEach((key, topic) {
-        if (key.endsWith('command_topic')) {
-          mqttDevice.addCommand(topic);
-        }
-      });
-    }
-  }
-
-  Map<String, dynamic> _convertPayloadCfgJson(MqttTopicParts topicParts, String config) {
-    if (!Utils.isValidJson(config)) {
-      return {MqttDevice.kInvalid: 'INVALID CONFIG ${topicParts.fullOrigTopic}'};
-    }
+    MqttTopicParts topicParts = _getPartsFromTopic(topicStr, jsonCfg);
     if (!kSupportedComponents.contains(topicParts.componentNode)) {
-      return {MqttDevice.kInvalid: 'INVALID COMPONENT ${topicParts.componentNode}'};
+      addInvalidDevice(MqttDevice.invalid('INVALID COMPONENT ${topicParts.componentNode}'));
+      return;
+    }
+    String id = pick(jsonCfg, 'device', 'identifiers').asStringOrNull() ??
+        pick(jsonCfg, 'unique_id').asStringOrNull() ??
+        MqttDevice.kInvalid;
+    if (id == MqttDevice.kInvalid) {
+      addInvalidDevice(MqttDevice.invalid('INVALID DEVICE_ID $topicStr'));
+      return;
     }
 
+    MqttDevice? mqttDevice;
+    if (_mapDevices.containsKey(id)) {
+      // aggregate existing devices
+      mqttDevice = _mapDevices[id];
+      mqttDevice?.addTopicCfgJson(topicParts, jsonCfg);
+    } else {
+      // create new device
+      String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicStr;
+      mqttDevice = MqttDevice(
+        id: id,
+        name: name,
+        type: '',
+        label: '',
+      );
+      mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
+      _mapDevices[id] = mqttDevice;
+    }
+    topicParts.entity?.bind(mqttDevice!);
+  }
+
+  Map<String, dynamic> _convertPayloadCfgJson(String config) {
     final Map<String, dynamic> json = {};
 
     Utils.toJsonMap(config).forEach((k, value) {
@@ -243,7 +178,7 @@ class MqttDiscovery {
     return json;
   }
 
-  MqttTopicParts _getPartsFromTopic(String topicStr) {
+  MqttTopicParts _getPartsFromTopic(String topicStr, dynamic jsonCfg) {
     MqttTopicParts topicParts = MqttTopicParts(topicStr);
     topicParts.configNode = MqttDevice.kInvalid;
     if (topicStr.contains('/')) {
@@ -262,18 +197,46 @@ class MqttDiscovery {
         }
       }
     }
+    switch (topicParts.componentNode) {
+      case 'alarm_control_panel':
+      case 'binary_sensor':
+      case 'button':
+      case 'camera':
+      case 'climate':
+      case 'cover':
+      case 'device_automation':
+      case 'device_tracker':
+      case 'fan':
+      case 'humidifier':
+      case 'light':
+      case 'lock':
+      case 'number':
+      case 'scene':
+      case 'siren':
+      case 'select':
+      case 'sensor':
+      case 'switch':
+      case 'tag':
+      case 'text':
+      case 'update':
+      case 'vacuum':
+      default:
+        topicParts.entity = MqttBaseEntity(mqttClient!, events, topicParts, jsonCfg);
+    }
     return topicParts;
   }
 }
 
 class MqttTopicParts {
   MqttTopicParts(this.fullOrigTopic);
+
   String fullOrigTopic = '';
   String discoveryNode = '';
   String componentNode = '';
   String idNode = '';
   String? objectNode;
   String configNode = '';
+  MqttBaseEntity? entity;
 
   @override
   String toString() => fullOrigTopic;
