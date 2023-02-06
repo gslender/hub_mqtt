@@ -6,12 +6,16 @@ import 'package:hub_mqtt/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
-class MqttBaseEntity {
+abstract class MqttBaseEntity {
   MqttBaseEntity(this.mqttClient, this.events, this.topicParts, this.jsonCfg);
+
   final MqttServerClient mqttClient;
   final EventEmitter events;
   final MqttTopicParts topicParts;
   final dynamic jsonCfg;
+
+  String getStateTopicTag();
+  String getJsonAttributesTopicTag();
 
   void bind(MqttDevice mqttDevice) {
     mqttDevice.addCapability(topicParts.componentNode);
@@ -27,25 +31,23 @@ class MqttBaseEntity {
     String cfgUrl = pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '';
     if (cfgUrl.isNotEmpty) mqttDevice.addAttribValue('device_configuration_url', cfgUrl);
 
-    if (!_subScribeStateTopics(mqttDevice, 'state_topic')) _subScribeStateTopics(mqttDevice, 'topic');
+    _subScribeStateTopics(mqttDevice, getStateTopicTag());
     _addCommandTopics(mqttDevice);
 
     // now subscribe to state_topic, availability_topic and json_attributes_topic
 
     // _subScribeTopics(mqttDevice, 'availability_topic');
-    // _subScribeTopics(mqttDevice, 'json_attributes_topic');
+    _subScribeJsonAttributesTopics(mqttDevice, getJsonAttributesTopicTag());
   }
 
-  bool _subScribeStateTopics(MqttDevice mqttDevice, String jsonKey) {
-    bool hasStateTopic = false;
+  void _subScribeStateTopics(MqttDevice mqttDevice, String jsonKey) {
     mqttDevice.getTopicCfgJsons().forEach((topicParts, json) {
       json.forEach((cfgJsonKey, cfgJsonValue) {
         if (cfgJsonKey == jsonKey) {
-          hasStateTopic = true;
           events.on<String>(cfgJsonValue, (String data) {
             String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}';
             mqttDevice.addAttribValue(attrib, data);
-            Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
+            // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
           });
           if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
             mqttClient.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
@@ -53,7 +55,24 @@ class MqttBaseEntity {
         }
       });
     });
-    return hasStateTopic;
+  }
+
+  void _subScribeJsonAttributesTopics(MqttDevice mqttDevice, String jsonKey) {
+    mqttDevice.getTopicCfgJsons().forEach((topicParts, json) {
+      json.forEach((cfgJsonKey, cfgJsonValue) {
+        if (cfgJsonKey == jsonKey) {
+          events.on<String>(cfgJsonValue, (String data) {
+            // String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}';
+            String attrib = 'jsonAttrib';
+            mqttDevice.addAttribValue(attrib, data);
+            // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
+          });
+          if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
+            mqttClient.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
+          }
+        }
+      });
+    });
   }
 
 /*

@@ -2,6 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:hub_mqtt/entities/mqtt_base_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_binary_sensor_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_sensor_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_camera_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_climate_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_cover_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_default_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_fan_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_light_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_lock_entity.dart';
+import 'package:hub_mqtt/entities/mqtt_tag_entity.dart';
 import 'package:hub_mqtt/ha_const.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/utils.dart';
@@ -198,30 +208,48 @@ class MqttDiscovery {
       }
     }
     switch (topicParts.componentNode) {
-      case 'alarm_control_panel':
-      case 'binary_sensor':
-      case 'button':
       case 'camera':
+        topicParts.entity = MqttCameraEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'tag':
+        topicParts.entity = MqttTagEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'light':
+        topicParts.entity = MqttLightEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'lock':
+        topicParts.entity = MqttLockEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
       case 'climate':
+        topicParts.entity = MqttClimateEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
       case 'cover':
+        topicParts.entity = MqttCoverEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'fan':
+        topicParts.entity = MqttFanEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'binary_sensor':
+        topicParts.entity = MqttBinarySensorEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'sensor':
+        topicParts.entity = MqttSensorEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
+      case 'alarm_control_panel':
+      case 'button':
       case 'device_automation':
       case 'device_tracker':
-      case 'fan':
       case 'humidifier':
-      case 'light':
-      case 'lock':
       case 'number':
       case 'scene':
       case 'siren':
       case 'select':
-      case 'sensor':
       case 'switch':
-      case 'tag':
       case 'text':
       case 'update':
       case 'vacuum':
       default:
-        topicParts.entity = MqttBaseEntity(mqttClient!, events, topicParts, jsonCfg);
+        topicParts.entity = MqttDefaultEntity(mqttClient!, events, topicParts, jsonCfg);
     }
     return topicParts;
   }
