@@ -16,6 +16,7 @@ abstract class MqttBaseEntity {
 
   String getStateTopicTag();
   String getJsonAttributesTopicTag();
+  String getAvailabilityTopicTag();
 
   void bind(MqttDevice mqttDevice) {
     mqttDevice.addCapability(topicParts.componentNode);
@@ -31,42 +32,35 @@ abstract class MqttBaseEntity {
     String cfgUrl = pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '';
     if (cfgUrl.isNotEmpty) mqttDevice.addAttribValue('device_configuration_url', cfgUrl);
 
-    _subScribeStateTopics(mqttDevice, getStateTopicTag());
-    _addCommandTopics(mqttDevice);
-
-    // now subscribe to state_topic, availability_topic and json_attributes_topic
-
-    // _subScribeTopics(mqttDevice, 'availability_topic');
-    _subScribeJsonAttributesTopics(mqttDevice, getJsonAttributesTopicTag());
-  }
-
-  void _subScribeStateTopics(MqttDevice mqttDevice, String jsonKey) {
-    mqttDevice.getTopicCfgJsons().forEach((topicParts, json) {
-      json.forEach((cfgJsonKey, cfgJsonValue) {
-        if (cfgJsonKey == jsonKey) {
-          events.on<String>(cfgJsonValue, (String data) {
-            String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}';
-            mqttDevice.addAttribValue(attrib, data);
-            // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
-          });
-          if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
-            mqttClient.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
-          }
-        }
-      });
+    // subscribe to state_topic
+    _doSubscribeTopicEvent(mqttDevice, getStateTopicTag(), (data) {
+      String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_state';
+      mqttDevice.addAttribValue(attrib, data);
+      // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
     });
+
+    // subscribe to availability_topic
+    _doSubscribeTopicEvent(mqttDevice, getAvailabilityTopicTag(), (data) {
+      String attrib = 'jsonAttrib';
+      mqttDevice.addAttribValue(attrib, data);
+      // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
+    });
+
+    // subscribe to json_attributes_topic
+    _doSubscribeTopicEvent(mqttDevice, getJsonAttributesTopicTag(), (data) {
+      String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_availability';
+      mqttDevice.addAttribValue(attrib, data);
+      // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
+    });
+
+    _addCommandTopics(mqttDevice);
   }
 
-  void _subScribeJsonAttributesTopics(MqttDevice mqttDevice, String jsonKey) {
+  void _doSubscribeTopicEvent(MqttDevice mqttDevice, String jsonKey, Function(String) callback) {
     mqttDevice.getTopicCfgJsons().forEach((topicParts, json) {
       json.forEach((cfgJsonKey, cfgJsonValue) {
         if (cfgJsonKey == jsonKey) {
-          events.on<String>(cfgJsonValue, (String data) {
-            // String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}';
-            String attrib = 'jsonAttrib';
-            mqttDevice.addAttribValue(attrib, data);
-            // Utils.logInfo('Device ${mqttDevice.name} Subscribing $jsonKey topic $cfgJsonValue sent $data');
-          });
+          events.on<String>(cfgJsonValue, callback);
           if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
             mqttClient.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
           }
