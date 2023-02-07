@@ -87,11 +87,6 @@ class MqttDiscovery {
               return;
             }
 
-            /// STATUS TOPIC
-            if (topicStr.endsWith('/status')) {
-              return;
-            }
-
             /// CONFIG TOPIC
             if (topicStr.endsWith('/config')) {
               _processConfigTopic(topicStr, payloadStr);
