@@ -5,6 +5,7 @@ import 'package:hub_mqtt/mqtt_discovery.dart';
 import 'package:hub_mqtt/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:jinja/jinja.dart';
 
 abstract class MqttBaseEntity {
   MqttBaseEntity(this.mqttClient, this.events, this.topicParts, this.jsonCfg);
@@ -44,7 +45,7 @@ abstract class MqttBaseEntity {
     // subscribe to availability_topic
     for (String tag in getAvailabilityTopicTag()) {
       _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
-        String attrib = 'jsonAttrib';
+        String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_availability';
         mqttDevice.addAttribValue(attrib, data);
       });
     }
@@ -53,6 +54,15 @@ abstract class MqttBaseEntity {
     for (String tag in getJsonAttributesTopicTag()) {
       _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
         String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_json';
+        String valueTemplate = pick(jsonCfg, 'value_template').asStringOrNull() ?? '';
+        if (data.startsWith('{') && valueTemplate.isNotEmpty) {
+          // using templates !!
+          var env = Environment();
+          var tmpl = env.fromString(valueTemplate);
+          Map<String, dynamic> jsonMap = Utils.toJsonMap(data);
+          // print('valueTemplate=$valueTemplate jsonMap = $jsonMap $data');
+          data = tmpl.render({'value_json': jsonMap});
+        }
         mqttDevice.addAttribValue(attrib, data);
       });
     }

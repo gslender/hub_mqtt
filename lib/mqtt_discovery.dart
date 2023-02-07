@@ -19,7 +19,6 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:events_emitter/events_emitter.dart';
 import 'package:deep_pick/deep_pick.dart';
-import 'package:jinja/jinja.dart';
 
 class MqttDiscovery {
   final Map<String, MqttDevice> _mapDevices = {};
