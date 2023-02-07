@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 
-class DeviceAttributeWidget extends StatefulWidget {
-  const DeviceAttributeWidget({super.key, required this.selectedDevice});
+class DeviceAttributesWidget extends StatefulWidget {
+  const DeviceAttributesWidget({super.key, required this.selectedDevice});
 
   final MqttDevice selectedDevice;
   @override
-  State<DeviceAttributeWidget> createState() => _DeviceAttributeWidgetState();
+  State<DeviceAttributesWidget> createState() => _DeviceAttributesWidgetState();
 }
 
-class _DeviceAttributeWidgetState extends State<DeviceAttributeWidget> {
+class _DeviceAttributesWidgetState extends State<DeviceAttributesWidget> {
   @override
   Widget build(BuildContext context) {
     return Table(

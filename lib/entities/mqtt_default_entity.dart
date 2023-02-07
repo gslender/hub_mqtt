@@ -9,4 +9,6 @@ class MqttDefaultEntity extends MqttBaseEntity {
   String getJsonAttributesTopicTag() => 'json_attributes_topic';
   @override
   String getAvailabilityTopicTag() => 'availability_topic';
+  @override
+  String getCommandTopicTag() => 'command_topic';
 }

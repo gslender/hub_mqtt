@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hub_mqtt/device.dart';
-import 'package:hub_mqtt/device_attribute_widget.dart';
+import 'package:hub_mqtt/device_attributes_widget.dart';
+import 'package:hub_mqtt/device_commands_widget.dart';
 import 'package:hub_mqtt/enums.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_discovery.dart';
@@ -36,6 +37,7 @@ class _HubMQTTState extends State<HubMQTT> {
   final MqttDiscovery discovery = MqttDiscovery();
   MqttDevice? selectedDevice;
   String? selectedTopic;
+  int selectedIndex = 0;
 
   @override
   void initState() {
@@ -183,22 +185,41 @@ class _HubMQTTState extends State<HubMQTT> {
     return SingleChildScrollView(
       child: ListView.builder(
           shrinkWrap: true,
-          itemCount: 1 + (selectedDevice?.getTopics().length ?? 0),
+          itemCount: 2 + (selectedDevice?.getTopics().length ?? 0),
           itemBuilder: (context, index) {
             if (index == 0) {
               return Card(
-                color: selectedTopic == null ? Colors.black54 : null,
+                color: selectedTopic == null && selectedIndex == 0 ? Colors.black54 : null,
                 child: ListTile(
                   leading: const Icon(Icons.chevron_right),
                   dense: true,
                   selectedColor: Colors.white,
-                  selected: selectedTopic == null,
-                  onTap: () => setState(() => selectedTopic = null),
+                  selected: selectedTopic == null && selectedIndex == 0,
+                  onTap: () => setState(() {
+                    selectedIndex = 0;
+                    selectedTopic = null;
+                  }),
                   title: const Text('Attributes and Variables'),
                 ),
               );
             }
-            String? topic = selectedDevice?.getTopics()[index - 1];
+            if (index == 1) {
+              return Card(
+                color: selectedTopic == null && selectedIndex == 1 ? Colors.black54 : null,
+                child: ListTile(
+                  leading: const Icon(Icons.chevron_right),
+                  dense: true,
+                  selectedColor: Colors.white,
+                  selected: selectedTopic == null && selectedIndex == 1,
+                  onTap: () => setState(() {
+                    selectedIndex = 1;
+                    selectedTopic = null;
+                  }),
+                  title: const Text('Commands'),
+                ),
+              );
+            }
+            String? topic = selectedDevice?.getTopics()[index - 2];
             return Card(
               color: topic == selectedTopic ? Colors.black54 : null,
               child: ListTile(
@@ -223,6 +244,26 @@ class _HubMQTTState extends State<HubMQTT> {
       case AppStatus.connecting:
         return const Center(child: CircularProgressIndicator());
       case AppStatus.connected:
+        Widget bottomRightWidget = Container();
+        if (selectedDevice != null) {
+          if (selectedTopic == null) {
+            if (selectedIndex == 0) {
+              bottomRightWidget = SingleChildScrollView(
+                  child: DeviceAttributesWidget(key: UniqueKey(), selectedDevice: selectedDevice!));
+            }
+            if (selectedIndex == 1) {
+              bottomRightWidget =
+                  SingleChildScrollView(child: DeviceCommandsWidget(key: UniqueKey(), selectedDevice: selectedDevice!));
+            }
+          } else {
+            bottomRightWidget = Container(
+                padding: const EdgeInsets.all(4),
+                child: JsonConfig(
+                  data: JsonConfigData(style: const JsonStyleScheme(depth: 2)),
+                  child: JsonView(json: selectedDevice?.getTopicJson(selectedTopic)),
+                ));
+          }
+        }
         return Container(
           padding: const EdgeInsets.all(4),
           child: Row(
@@ -249,23 +290,8 @@ class _HubMQTTState extends State<HubMQTT> {
                     Flexible(
                       flex: 1,
                       fit: FlexFit.tight,
-                      child: Card(
-                          elevation: 5,
-                          child: selectedTopic == null
-                              ? SingleChildScrollView(
-                                  child: selectedDevice != null
-                                      ? DeviceAttributeWidget(
-                                          key: UniqueKey(),
-                                          selectedDevice: selectedDevice!,
-                                        )
-                                      : Container())
-                              : Container(
-                                  padding: const EdgeInsets.all(4),
-                                  child: JsonConfig(
-                                    data: JsonConfigData(style: const JsonStyleScheme(depth: 2)),
-                                    child: JsonView(json: selectedDevice?.getTopicJson(selectedTopic)),
-                                  ))),
-                    ),
+                      child: Card(elevation: 5, child: bottomRightWidget),
+                    )
                   ],
                 ),
               )),
