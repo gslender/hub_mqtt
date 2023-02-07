@@ -14,8 +14,10 @@ class DeviceAttributesWidget extends StatefulWidget {
 class _DeviceAttributesWidgetState extends State<DeviceAttributesWidget> {
   @override
   Widget build(BuildContext context) {
-    return Table(
-      children: [..._mqttSelectedDeviceAttribValues()],
+    return SelectionArea(
+      child: Table(
+        children: [..._mqttSelectedDeviceAttribValues()],
+      ),
     );
   }
 

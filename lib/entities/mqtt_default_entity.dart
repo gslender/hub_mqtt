@@ -4,11 +4,11 @@ class MqttDefaultEntity extends MqttBaseEntity {
   MqttDefaultEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
-  String getStateTopicTag() => 'state_topic';
+  List<String> getStateTopicTag() => ['state_topic'];
   @override
-  String getJsonAttributesTopicTag() => 'json_attributes_topic';
+  List<String> getJsonAttributesTopicTag() => ['json_attributes_topic'];
   @override
-  String getAvailabilityTopicTag() => 'availability_topic';
+  List<String> getAvailabilityTopicTag() => ['availability_topic'];
   @override
-  String getCommandTopicTag() => 'command_topic';
+  List<String> getCommandTopicTag() => ['command_topic'];
 }

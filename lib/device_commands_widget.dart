@@ -12,8 +12,10 @@ class DeviceCommandsWidget extends StatefulWidget {
 class _DeviceCommandsWidgetState extends State<DeviceCommandsWidget> {
   @override
   Widget build(BuildContext context) {
-    return Table(
-      children: [..._mqttSelectedDeviceCommands()],
+    return SelectionArea(
+      child: Table(
+        children: [..._mqttSelectedDeviceCommands()],
+      ),
     );
   }
 

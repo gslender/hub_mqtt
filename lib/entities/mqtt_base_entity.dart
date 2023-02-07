@@ -2,6 +2,7 @@ import 'package:deep_pick/deep_pick.dart';
 import 'package:events_emitter/events_emitter.dart';
 import 'package:hub_mqtt/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_discovery.dart';
+import 'package:hub_mqtt/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -13,10 +14,10 @@ abstract class MqttBaseEntity {
   final MqttTopicParts topicParts;
   final dynamic jsonCfg;
 
-  String getStateTopicTag();
-  String getJsonAttributesTopicTag();
-  String getAvailabilityTopicTag();
-  String getCommandTopicTag();
+  List<String> getStateTopicTag();
+  List<String> getJsonAttributesTopicTag();
+  List<String> getAvailabilityTopicTag();
+  List<String> getCommandTopicTag();
 
   void bind(MqttDevice mqttDevice) {
     mqttDevice.addCapability(topicParts.componentNode);
@@ -33,31 +34,40 @@ abstract class MqttBaseEntity {
     if (cfgUrl.isNotEmpty) mqttDevice.addAttribValue('device_configuration_url', cfgUrl);
 
     // subscribe to state_topic
-    _doSubscribeTopicWithEvent(mqttDevice, getStateTopicTag(), (data) {
-      String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_state';
-      mqttDevice.addAttribValue(attrib, data);
-    });
+    for (String tag in getStateTopicTag()) {
+      _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
+        String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_state';
+        mqttDevice.addAttribValue(attrib, data);
+      });
+    }
 
     // subscribe to availability_topic
-    _doSubscribeTopicWithEvent(mqttDevice, getAvailabilityTopicTag(), (data) {
-      String attrib = 'jsonAttrib';
-      mqttDevice.addAttribValue(attrib, data);
-    });
+    for (String tag in getAvailabilityTopicTag()) {
+      _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
+        String attrib = 'jsonAttrib';
+        mqttDevice.addAttribValue(attrib, data);
+      });
+    }
 
     // subscribe to json_attributes_topic
-    _doSubscribeTopicWithEvent(mqttDevice, getJsonAttributesTopicTag(), (data) {
-      String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_availability';
-      mqttDevice.addAttribValue(attrib, data);
-    });
+    for (String tag in getJsonAttributesTopicTag()) {
+      _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
+        String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_json';
+        mqttDevice.addAttribValue(attrib, data);
+      });
+    }
 
     // add all command_topic
-    _addCommandTopics(mqttDevice, getCommandTopicTag());
+    for (String tag in getCommandTopicTag()) {
+      _addCommandTopics(mqttDevice, tag);
+    }
   }
 
   void _doSubscribeTopicWithEvent(MqttDevice mqttDevice, String jsonKey, Function(String) eventCallback) {
     jsonCfg.forEach((cfgJsonKey, cfgJsonValue) {
       if (cfgJsonKey == jsonKey) {
         events.on<String>(cfgJsonValue, (data) {
+          Utils.logInfo('Device: ${mqttDevice.name} Subscribe:$jsonKey $cfgJsonValue $data');
           eventCallback(data);
         });
         if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {

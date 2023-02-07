@@ -5,5 +5,5 @@ class MqttTagEntity extends MqttDefaultEntity {
   MqttTagEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
-  String getStateTopicTag() => 'topic';
+  List<String> getStateTopicTag() => ['topic'];
 }
