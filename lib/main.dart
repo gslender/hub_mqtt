@@ -38,6 +38,7 @@ class _HubMQTTState extends State<HubMQTT> {
   MqttDevice? selectedDevice;
   String? selectedTopic;
   int selectedIndex = 0;
+  bool useEntityTopicTypeinAttrib = false;
 
   @override
   void initState() {
@@ -100,6 +101,20 @@ class _HubMQTTState extends State<HubMQTT> {
                   ),
                 ),
               ),
+            ],
+          ),
+          Row(
+            children: [
+              Flexible(
+                child: SwitchListTile(
+                  onChanged: (value) => setState(() {
+                    useEntityTopicTypeinAttrib = value;
+                  }),
+                  value: useEntityTopicTypeinAttrib,
+                  title: const Text('Entity & Type in Attribute Name'),
+                ),
+              ),
+              const Spacer(),
             ],
           ),
           const Divider(),
@@ -305,7 +320,8 @@ class _HubMQTTState extends State<HubMQTT> {
   }
 
   _queryMQTT() {
-    debugPrint('_queryMQTT ${hostname.text} ${username.text} ${'*' * password.text.length}');
+    debugPrint(
+        '_queryMQTT ${hostname.text} ${username.text} ${'*' * password.text.length} $useEntityTopicTypeinAttrib');
     setState(() {
       selectedDevice = null;
       selectedTopic = null;
@@ -317,6 +333,7 @@ class _HubMQTTState extends State<HubMQTT> {
       clientId: widget.title,
       username: username.text,
       password: password.text,
+      useEntityTopicTypeinAttrib: useEntityTopicTypeinAttrib,
       connectedCallback: () => setState(() {
         appStatus = AppStatus.connected;
         _devices.clear();

@@ -32,7 +32,7 @@ abstract class MqttBaseEntity {
   List<String> getJsonAttributesTopicTags();
   List<String> getCommandTopicTags();
 
-  void bind(MqttDevice mqttDevice);
+  void bind(MqttDevice mqttDevice, [bool useEntityTopicTypeinAttrib = false]);
 }
 
 class Availability {

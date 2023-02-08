@@ -39,6 +39,7 @@ class MqttDiscovery {
     String clientId = 'MqttDiscovery',
     required String username,
     required String password,
+    bool useEntityTopicTypeinAttrib = false,
     VoidCallback? connectedCallback,
     VoidCallback? failedCallback,
     VoidCallback? notAuthorizedCallback,
@@ -88,7 +89,7 @@ class MqttDiscovery {
 
             /// CONFIG TOPIC
             if (topicStr.endsWith('/config')) {
-              _processConfigTopic(topicStr, payloadStr);
+              _processConfigTopic(topicStr, payloadStr, useEntityTopicTypeinAttrib);
               if (devicesUpdatedCallback != null) devicesUpdatedCallback();
               return;
             }
@@ -113,7 +114,7 @@ class MqttDiscovery {
 
   void addInvalidDevice(MqttDevice device) => _mapDevices['${_mapDevices.length + 1}${MqttDevice.kInvalid}'] = device;
 
-  void _processConfigTopic(String topicStr, String payloadStr) {
+  void _processConfigTopic(String topicStr, String payloadStr, bool useEntityTopicTypeinAttrib) {
     if (!Utils.isValidJson(payloadStr)) {
       addInvalidDevice(MqttDevice.invalid('INVALID JSON $topicStr'));
       return;
@@ -154,7 +155,7 @@ class MqttDiscovery {
       mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
       _mapDevices[id] = mqttDevice;
     }
-    topicParts.entity?.bind(mqttDevice!);
+    topicParts.entity?.bind(mqttDevice!, useEntityTopicTypeinAttrib);
   }
 
   Map<String, dynamic> _convertPayloadCfgJson(String config) {
