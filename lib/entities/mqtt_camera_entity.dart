@@ -5,5 +5,5 @@ class MqttCameraEntity extends MqttDefaultEntity {
   MqttCameraEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
-  List<String> getStateTopicTag() => ['topic'];
+  List<String> getStateTopicTags() => ['topic'];
 }
