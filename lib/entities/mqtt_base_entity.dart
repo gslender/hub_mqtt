@@ -14,6 +14,9 @@ abstract class MqttBaseEntity {
   final EventEmitter events;
   final MqttTopicParts topicParts;
   final dynamic jsonCfg;
+  List<Availability> availabilityList = [];
+  String payloadAvailable = 'online';
+  String payloadNotAvailable = 'offline';
 
   List<String> getStateTopicTag();
   String getValueTemplateTag() => 'value_template';
@@ -59,39 +62,70 @@ abstract class MqttBaseEntity {
     }
 
     // subscribe to availability
+    payloadAvailable = pick(jsonCfg, 'payload_available').asStringOrNull() ?? 'online';
+    payloadNotAvailable = pick(jsonCfg, 'payload_not_available').asStringOrNull() ?? 'offline';
+
     if (_entityHasCfgKey(getAvailabilityTopicTag())) {
       _findTagAttachEventSubscribe(mqttDevice, getAvailabilityTopicTag(), (data) {
-        mqttDevice.addAttribValue('availability', data);
+        if (data == payloadAvailable) {
+          mqttDevice.addAttribValue('availability', 'online');
+        } else {
+          mqttDevice.addAttribValue('availability', 'offline');
+        }
       });
     } else {
-      String availabilityMode = pick(jsonCfg, getAvailabilityModeTag()).asStringOrNull() ?? '';
+      String availabilityMode = pick(jsonCfg, getAvailabilityModeTag()).asStringOrNull() ?? 'latest';
 
-      List<String> availabilityList = pick(jsonCfg, getAvailabilityTag()).asListOrEmpty<String>((pick) {
-        return pick(getAvailabilityListTopicTag()).asStringOrNull() ?? '';
+      availabilityList = pick(jsonCfg, getAvailabilityTag()).asListOrEmpty<Availability>((pick) {
+        Availability av = Availability();
+        av.topic = pick(getAvailabilityListTopicTag()).asStringOrNull() ?? '';
+        av.payloadAvailable = pick('payload_available').asStringOrNull() ?? 'online';
+        av.payloadNotAvailable = pick('payload_not_available').asStringOrNull() ?? 'online';
+        return av;
       });
 
-      if (availabilityMode.toLowerCase() == 'any') {
-        for (String topic in availabilityList) {
-          _doAttachEventSubscribe(topic, (data) {
-            mqttDevice.addAttribValue('availability', data);
-          });
-        }
-      }
-
-      //TODO incorrect implementation of 'latest'
       if (availabilityMode.toLowerCase() == 'latest') {
-        for (String topic in availabilityList) {
-          _doAttachEventSubscribe(topic, (data) {
-            mqttDevice.addAttribValue('availability', data);
+        for (Availability av in availabilityList) {
+          _doAttachEventSubscribe(av.topic, (data) {
+            if (data == av.payloadAvailable) {
+              mqttDevice.addAttribValue('availability', 'online');
+            } else {
+              mqttDevice.addAttribValue('availability', 'offline');
+            }
           });
         }
       }
 
-      //TODO incorrect implementation of 'all'
+      if (availabilityMode.toLowerCase() == 'any') {
+        for (Availability av in availabilityList) {
+          _doAttachEventSubscribe(av.topic, (data) {
+            av.isAvailable = data == av.payloadAvailable;
+            bool anyAvailable = false;
+            for (Availability av in availabilityList) {
+              if (av.isAvailable) anyAvailable = true;
+            }
+            if (anyAvailable) {
+              mqttDevice.addAttribValue('availability', 'online');
+            } else {
+              mqttDevice.addAttribValue('availability', 'offline');
+            }
+          });
+        }
+      }
+
       if (availabilityMode.toLowerCase() == 'all') {
-        for (String topic in availabilityList) {
-          _doAttachEventSubscribe(topic, (data) {
-            mqttDevice.addAttribValue('availability', data);
+        for (Availability av in availabilityList) {
+          _doAttachEventSubscribe(av.topic, (data) {
+            av.isAvailable = data == av.payloadAvailable;
+            int allAvailable = 0;
+            for (Availability av in availabilityList) {
+              if (av.isAvailable) allAvailable++;
+            }
+            if (allAvailable == availabilityList.length) {
+              mqttDevice.addAttribValue('availability', 'online');
+            } else {
+              mqttDevice.addAttribValue('availability', 'offline');
+            }
           });
         }
       }
@@ -169,4 +203,12 @@ abstract class MqttBaseEntity {
     return MqttDevice.kInvalid;
   }
 */
+}
+
+class Availability {
+  String topic = '';
+  String payloadAvailable = 'online';
+  String payloadNotAvailable = 'offline';
+  String valueTemplate = '';
+  bool isAvailable = false;
 }
