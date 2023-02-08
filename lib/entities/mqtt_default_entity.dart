@@ -8,7 +8,5 @@ class MqttDefaultEntity extends MqttBaseEntity {
   @override
   List<String> getJsonAttributesTopicTag() => ['json_attributes_topic'];
   @override
-  List<String> getAvailabilityTopicTag() => ['availability_topic'];
-  @override
   List<String> getCommandTopicTag() => ['command_topic'];
 }

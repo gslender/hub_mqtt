@@ -16,8 +16,12 @@ abstract class MqttBaseEntity {
   final dynamic jsonCfg;
 
   List<String> getStateTopicTag();
+  String getValueTemplateTag() => 'value_template';
   List<String> getJsonAttributesTopicTag();
-  List<String> getAvailabilityTopicTag();
+  String getAvailabilityTopicTag() => 'availability_topic';
+  String getAvailabilityTag() => 'availability';
+  String getAvailabilityListTopicTag() => 'topic';
+  String getAvailabilityModeTag() => 'availability_mode';
   List<String> getCommandTopicTag();
 
   void bind(MqttDevice mqttDevice) {
@@ -36,24 +40,67 @@ abstract class MqttBaseEntity {
 
     // subscribe to state_topic
     for (String tag in getStateTopicTag()) {
-      _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
-        String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_state';
-        mqttDevice.addAttribValue(attrib, data);
+      _findTagAttachEventSubscribe(mqttDevice, tag, (data) {
+        if (_entityHasCfgKey(getValueTemplateTag())) {
+          String valueTemplate = pick(jsonCfg, 'value_template').asStringOrNull() ?? '';
+          if (data.startsWith('{') && valueTemplate.isNotEmpty) {
+            // using templates !!
+            var env = Environment();
+            var tmpl = env.fromString(valueTemplate);
+            Map<String, dynamic> jsonMap = Utils.toJsonMap(data);
+            // print('valueTemplate=$valueTemplate jsonMap = $jsonMap $data');
+            data = tmpl.render({'value_json': jsonMap});
+          }
+          mqttDevice.addAttribValue(_attribPrefix('value'), data);
+        } else {
+          mqttDevice.addAttribValue(_attribPrefix('state'), data);
+        }
       });
     }
 
-    // subscribe to availability_topic
-    for (String tag in getAvailabilityTopicTag()) {
-      _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
-        String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_availability';
-        mqttDevice.addAttribValue(attrib, data);
+    // subscribe to availability
+    if (_entityHasCfgKey(getAvailabilityTopicTag())) {
+      _findTagAttachEventSubscribe(mqttDevice, getAvailabilityTopicTag(), (data) {
+        mqttDevice.addAttribValue('availability', data);
       });
+    } else {
+      String availabilityMode = pick(jsonCfg, getAvailabilityModeTag()).asStringOrNull() ?? '';
+
+      List<String> availabilityList = pick(jsonCfg, getAvailabilityTag()).asListOrEmpty<String>((pick) {
+        return pick(getAvailabilityListTopicTag()).asStringOrNull() ?? '';
+      });
+
+      if (availabilityMode.toLowerCase() == 'any') {
+        for (String topic in availabilityList) {
+          _doAttachEventSubscribe(topic, (data) {
+            mqttDevice.addAttribValue('availability', data);
+          });
+        }
+      }
+
+      //TODO incorrect implementation of 'latest'
+      if (availabilityMode.toLowerCase() == 'latest') {
+        for (String topic in availabilityList) {
+          _doAttachEventSubscribe(topic, (data) {
+            mqttDevice.addAttribValue('availability', data);
+          });
+        }
+      }
+
+      //TODO incorrect implementation of 'all'
+      if (availabilityMode.toLowerCase() == 'all') {
+        for (String topic in availabilityList) {
+          _doAttachEventSubscribe(topic, (data) {
+            mqttDevice.addAttribValue('availability', data);
+          });
+        }
+      }
     }
 
     // subscribe to json_attributes_topic
     for (String tag in getJsonAttributesTopicTag()) {
-      _doSubscribeTopicWithEvent(mqttDevice, tag, (data) {
-        String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_json';
+      _findTagAttachEventSubscribe(mqttDevice, tag, (data) {
+        // String attrib = '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_json';
         String valueTemplate = pick(jsonCfg, 'value_template').asStringOrNull() ?? '';
         if (data.startsWith('{') && valueTemplate.isNotEmpty) {
           // using templates !!
@@ -63,7 +110,7 @@ abstract class MqttBaseEntity {
           // print('valueTemplate=$valueTemplate jsonMap = $jsonMap $data');
           data = tmpl.render({'value_json': jsonMap});
         }
-        mqttDevice.addAttribValue(attrib, data);
+        mqttDevice.addAttribValue(_attribPrefix('json'), data);
       });
     }
 
@@ -73,18 +120,28 @@ abstract class MqttBaseEntity {
     }
   }
 
-  void _doSubscribeTopicWithEvent(MqttDevice mqttDevice, String jsonKey, Function(String) eventCallback) {
+  bool _entityHasCfgKey(String tag) => jsonCfg.containsKey(tag);
+
+  String _attribPrefix(String type) => '${topicParts.objectNode ?? topicParts.idNode}_$type';
+
+  void _findTagAttachEventSubscribe(MqttDevice mqttDevice, String tag, Function(String) eventCallback) {
     jsonCfg.forEach((cfgJsonKey, cfgJsonValue) {
-      if (cfgJsonKey == jsonKey) {
-        events.on<String>(cfgJsonValue, (data) {
-          Utils.logInfo('Device: ${mqttDevice.name} Subscribe:$jsonKey $cfgJsonValue $data');
-          eventCallback(data);
-        });
-        if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
-          mqttClient.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
+      if (cfgJsonKey == tag) {
+        if (cfgJsonValue is String) {
+          _doAttachEventSubscribe(cfgJsonValue, eventCallback);
         }
       }
     });
+  }
+
+  void _doAttachEventSubscribe(String cfgJsonValue, Function(String) eventCallback) {
+    events.on<String>(cfgJsonValue, (data) {
+      // Utils.logInfo('Device: ${mqttDevice.name} Subscribe:$jsonKey $cfgJsonValue $data');
+      eventCallback(data);
+    });
+    if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
+      mqttClient.subscribe(cfgJsonValue, MqttQos.atLeastOnce);
+    }
   }
 
   void _addCommandTopics(MqttDevice mqttDevice, String jsonKey) {
