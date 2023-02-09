@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hub_mqtt/device.dart';
+import 'package:hub_mqtt/mqtt_ha/device.dart';
 import 'package:hub_mqtt/device_attributes_widget.dart';
 import 'package:hub_mqtt/device_commands_widget.dart';
-import 'package:hub_mqtt/enums.dart';
-import 'package:hub_mqtt/mqtt_device.dart';
-import 'package:hub_mqtt/mqtt_discovery.dart';
+import 'package:hub_mqtt/mqtt_ha/enums.dart';
+import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
+import 'package:hub_mqtt/mqtt_ha/mqtt_discovery.dart';
 import 'package:json_view/json_view.dart';
 
 const String apptitle = 'hub_mqtt';
@@ -38,7 +38,8 @@ class _HubMQTTState extends State<HubMQTT> {
   MqttDevice? selectedDevice;
   String? selectedTopic;
   int selectedIndex = 0;
-  bool useEntityTopicTypeinAttrib = false;
+  bool useEntityTopicTypeinAttrib = true;
+  bool sortDeviceByName = true;
 
   @override
   void initState() {
@@ -109,12 +110,28 @@ class _HubMQTTState extends State<HubMQTT> {
                 child: SwitchListTile(
                   onChanged: (value) => setState(() {
                     useEntityTopicTypeinAttrib = value;
+                    if (_devices.isNotEmpty) _queryMQTT();
                   }),
                   value: useEntityTopicTypeinAttrib,
                   title: const Text('Entity & Type in Attribute Name'),
                 ),
               ),
               const Spacer(),
+              Flexible(
+                child: SwitchListTile(
+                  onChanged: (value) => setState(() {
+                    sortDeviceByName = value;
+                    if (sortDeviceByName) {
+                      _devices.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+                    } else {
+                      _devices.sort(
+                          (a, b) => a.purpose.toString().toLowerCase().compareTo(b.purpose.toString().toLowerCase()));
+                    }
+                  }),
+                  value: sortDeviceByName,
+                  title: const Text('Sort Devices by Name'),
+                ),
+              ),
             ],
           ),
           const Divider(),
@@ -347,6 +364,11 @@ class _HubMQTTState extends State<HubMQTT> {
       devicesUpdatedCallback: () => setState(() {
         _devices.clear();
         _devices.addAll(discovery.getImmutableDevices().values);
+        if (sortDeviceByName) {
+          _devices.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        } else {
+          _devices.sort((a, b) => a.purpose.toString().toLowerCase().compareTo(b.purpose.toString().toLowerCase()));
+        }
       }),
     );
   }

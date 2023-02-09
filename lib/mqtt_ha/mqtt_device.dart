@@ -1,6 +1,6 @@
 import 'package:deep_pick/deep_pick.dart';
-import 'package:hub_mqtt/device.dart';
-import 'package:hub_mqtt/mqtt_discovery.dart';
+import 'package:hub_mqtt/mqtt_ha/device.dart';
+import 'package:hub_mqtt/mqtt_ha/mqtt_discovery.dart';
 
 class MqttDevice extends Device {
   static const String kInvalid = 'kInvalid';

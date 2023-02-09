@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:hub_mqtt/mqtt_device.dart';
+import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
 
 class DeviceAttributesWidget extends StatefulWidget {
   const DeviceAttributesWidget({super.key, required this.selectedDevice});
@@ -31,12 +31,14 @@ class _DeviceAttributesWidgetState extends State<DeviceAttributesWidget> {
 
   List<TableRow> _mqttSelectedDeviceAttribValues() {
     List<TableRow> table = [];
-    widget.selectedDevice.getImmutableAttribValues().forEach((key, value) {
+    List<MapEntry<String, String>> attribValues = widget.selectedDevice.getImmutableAttribValues().entries.toList();
+    attribValues.sort(((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())));
+    for (MapEntry me in attribValues) {
       table.add(TableRow(children: [
-        Text(key),
-        Text(value),
+        Text(me.key),
+        Text(me.value),
       ]));
-    });
+    }
     return table;
   }
 }

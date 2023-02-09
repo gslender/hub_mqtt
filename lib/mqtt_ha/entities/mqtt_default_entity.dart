@@ -1,8 +1,8 @@
 import 'package:deep_pick/deep_pick.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hub_mqtt/entities/mqtt_base_entity.dart';
-import 'package:hub_mqtt/mqtt_device.dart';
-import 'package:hub_mqtt/utils.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
+import 'package:hub_mqtt/mqtt_ha/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:jinja/jinja.dart';
 
@@ -17,6 +17,8 @@ class MqttDefaultEntity extends MqttBaseEntity {
   List<String> getJsonAttributesTopicTags() => ['json_attributes_topic'];
   @override
   List<String> getCommandTopicTags() => ['command_topic'];
+  @override
+  String getNameDefault() => 'unknown';
 
   @mustCallSuper
   @override
@@ -44,7 +46,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
           String valueTemplate = pick(jsonCfg, tagTemplate).asStringOrNull() ?? '';
           data = _checkTemplate(data, valueTemplate);
 
-          mqttDevice.addAttribValue(_attribPrefix('value', useEntityTopicTypeinAttrib), data);
+          mqttDevice.addAttribValue(_attribPrefix('state', useEntityTopicTypeinAttrib), data);
         } else {
           mqttDevice.addAttribValue(_attribPrefix('state', useEntityTopicTypeinAttrib), data);
         }
@@ -134,9 +136,12 @@ class MqttDefaultEntity extends MqttBaseEntity {
     //////////////////////////////////////
     for (String tag in getJsonAttributesTopicTags()) {
       _findTagAttachEventSubscribe(mqttDevice, tag, (data) {
-        String valueTemplate = pick(jsonCfg, k_value_template).asStringOrNull() ?? '';
-        data = _checkTemplate(data, valueTemplate);
-        mqttDevice.addAttribValue(_attribPrefix('json', useEntityTopicTypeinAttrib), data);
+        if (data.startsWith('{') && Utils.isValidJson(data)) {
+          Map<String, dynamic> jsonData = Utils.toJsonMap(data);
+          jsonData.forEach((key, value) {
+            mqttDevice.addAttribValue(_attribPrefix(key, useEntityTopicTypeinAttrib), value.toString());
+          });
+        }
       });
     }
 
@@ -146,14 +151,35 @@ class MqttDefaultEntity extends MqttBaseEntity {
     }
   }
 
+  void addStringEntityAttribute(
+      MqttDevice mqttDevice, String attribName, String defaultName, bool useEntityTopicTypeinAttrib) {
+    mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
+        pick(jsonCfg, attribName).asStringOrNull() ?? defaultName);
+  }
+
+  void addIntEntityAttribute(
+      MqttDevice mqttDevice, String attribName, int defaultName, bool useEntityTopicTypeinAttrib) {
+    mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
+        (pick(jsonCfg, attribName).asIntOrNull() ?? defaultName).toString());
+  }
+
+  void addBoolEntityAttribute(
+      MqttDevice mqttDevice, String attribName, bool defaultName, bool useEntityTopicTypeinAttrib) {
+    mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
+        (pick(jsonCfg, attribName).asBoolOrNull() ?? defaultName).toString());
+  }
+
   String _checkTemplate(data, template) {
     if (data.startsWith('{') && template.isNotEmpty) {
       // using templates !!
       var env = Environment();
       var tmpl = env.fromString(template);
       Map<String, dynamic> jsonMap = Utils.toJsonMap(data);
-      // print('valueTemplate=$valueTemplate jsonMap = $jsonMap $data');
-      data = tmpl.render({k_value_json: jsonMap});
+      try {
+        data = tmpl.render({k_value_json: jsonMap});
+      } catch (e) {
+        print('${e.toString()} template=$template jsonMap = $jsonMap $data');
+      }
     }
     return data;
   }
@@ -162,7 +188,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
 
   String _attribPrefix(String type, bool useEntityTopicTypeinAttrib) => useEntityTopicTypeinAttrib
       ? '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_$type'
-      : topicParts.objectNode ?? topicParts.idNode;
+      : '${topicParts.objectNode ?? topicParts.idNode}_$type';
 
   void _findTagAttachEventSubscribe(MqttDevice mqttDevice, String tag, Function(String) eventCallback) {
     jsonCfg.forEach((cfgJsonKey, cfgJsonValue) {

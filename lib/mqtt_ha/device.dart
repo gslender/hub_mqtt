@@ -1,4 +1,4 @@
-import 'package:hub_mqtt/utils.dart';
+import 'package:hub_mqtt/mqtt_ha/utils.dart';
 
 enum DevicePurpose {
   aLight,

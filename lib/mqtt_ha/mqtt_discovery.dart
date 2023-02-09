@@ -1,20 +1,20 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:hub_mqtt/entities/mqtt_base_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_binary_sensor_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_sensor_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_camera_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_climate_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_cover_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_default_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_fan_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_light_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_lock_entity.dart';
-import 'package:hub_mqtt/entities/mqtt_tag_entity.dart';
-import 'package:hub_mqtt/ha_const.dart';
-import 'package:hub_mqtt/mqtt_device.dart';
-import 'package:hub_mqtt/utils.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_binary_sensor_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_sensor_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_camera_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_climate_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_cover_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_fan_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_light_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_lock_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_tag_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/ha_const.dart';
+import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
+import 'package:hub_mqtt/mqtt_ha/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:events_emitter/events_emitter.dart';
@@ -145,7 +145,7 @@ class MqttDiscovery {
       mqttDevice?.addTopicCfgJson(topicParts, jsonCfg);
     } else {
       // create new device
-      String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicStr;
+      String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicParts.entity?.getNameDefault() ?? '';
       mqttDevice = MqttDevice(
         id: id,
         name: name,
