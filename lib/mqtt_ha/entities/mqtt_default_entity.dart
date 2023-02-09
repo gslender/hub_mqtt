@@ -7,6 +7,9 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:jinja/jinja.dart';
 
 class MqttDefaultEntity extends MqttBaseEntity {
+  String payloadAvailable = k_online;
+  String payloadNotAvailable = k_offline;
+
   MqttDefaultEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
@@ -37,6 +40,14 @@ class MqttDefaultEntity extends MqttBaseEntity {
     if (cfgUrl.isNotEmpty) mqttDevice.addAttribValue('device_configuration_url', cfgUrl);
 
     //////////////////////////////////////
+    // add common attributes
+    //////////////////////////////////////
+    addStringEntityAttribute(mqttDevice, 'device_class', 'none', useEntityTopicTypeinAttrib);
+    addBoolEntityAttribute(mqttDevice, 'enabled_by_default', true, useEntityTopicTypeinAttrib);
+    addStringEntityAttribute(mqttDevice, 'encoding', 'utf-8', useEntityTopicTypeinAttrib);
+    addStringEntityAttribute(mqttDevice, 'entity_category', 'none', useEntityTopicTypeinAttrib);
+
+    //////////////////////////////////////
     // subscribe to state_topic
     //////////////////////////////////////
     for (String tag in getStateTopicTags()) {
@@ -46,7 +57,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
           String valueTemplate = pick(jsonCfg, tagTemplate).asStringOrNull() ?? '';
           data = _checkTemplate(data, valueTemplate);
         }
-        if (tag.endsWith('_topic')) tag = tag.substring(0, tag.length - 6);
+        if (tag.endsWith('state_topic')) tag = tag.substring(0, tag.length - 11);
         // print(_attribPrefix(tag, useEntityTopicTypeinAttrib));
         mqttDevice.addAttribValue(_attribPrefix(tag, useEntityTopicTypeinAttrib), data);
       });
@@ -189,9 +200,14 @@ class MqttDefaultEntity extends MqttBaseEntity {
 
   bool _entityHasCfgKey(String tag) => jsonCfg.containsKey(tag);
 
-  String _attribPrefix(String type, bool useEntityTopicTypeinAttrib) => useEntityTopicTypeinAttrib
-      ? '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_$type'
-      : '${topicParts.objectNode ?? topicParts.idNode}_$type';
+  String _attribPrefix(String type, bool useEntityTopicTypeinAttrib) {
+    if (type.isNotEmpty) type = '_$type';
+    if (useEntityTopicTypeinAttrib) {
+      return '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}$type';
+    } else {
+      return '${topicParts.objectNode ?? topicParts.idNode}$type';
+    }
+  }
 
   void _findTagAttachEventSubscribe(MqttDevice mqttDevice, String tag, Function(String) eventCallback) {
     jsonCfg.forEach((cfgJsonKey, cfgJsonValue) {

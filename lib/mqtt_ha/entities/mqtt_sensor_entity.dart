@@ -9,10 +9,6 @@ class MqttSensorEntity extends MqttDefaultEntity {
   @override
   void bind(MqttDevice mqttDevice, bool useEntityTopicTypeinAttrib) {
     super.bind(mqttDevice, useEntityTopicTypeinAttrib);
-    addStringEntityAttribute(mqttDevice, 'device_class', 'none', useEntityTopicTypeinAttrib);
-    addBoolEntityAttribute(mqttDevice, 'enabled_by_default', true, useEntityTopicTypeinAttrib);
-    addStringEntityAttribute(mqttDevice, 'encoding', 'utf-8', useEntityTopicTypeinAttrib);
-    addStringEntityAttribute(mqttDevice, 'entity_category', 'none', useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'expire_after', 0, useEntityTopicTypeinAttrib);
     addBoolEntityAttribute(mqttDevice, 'force_update', false, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'qos', 0, useEntityTopicTypeinAttrib);

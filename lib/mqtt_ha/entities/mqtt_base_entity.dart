@@ -24,8 +24,6 @@ abstract class MqttBaseEntity {
   final MqttTopicParts topicParts;
   final dynamic jsonCfg;
   List<Availability> availabilityList = [];
-  String payloadAvailable = k_online;
-  String payloadNotAvailable = k_offline;
 
   List<String> getStateTopicTags();
   Map<String, String> getStateTopicTemplateTags();
