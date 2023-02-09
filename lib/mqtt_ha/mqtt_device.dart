@@ -52,7 +52,7 @@ class MqttDevice extends Device {
     });
     if (validCapabilities.isEmpty) validCapabilities = getCapabilities().toList();
     if (validCapabilities.contains('fan')) return DevicePurpose.aFan;
-    if (validCapabilities.contains('climate')) return DevicePurpose.aThermostat;
+    if (validCapabilities.contains('climate')) return DevicePurpose.aClimate;
     if (validCapabilities.contains('cover')) return DevicePurpose.aBlind;
     if (validCapabilities.contains('camera')) return DevicePurpose.aCamera;
     if (validCapabilities.contains('lock')) return DevicePurpose.aLock;

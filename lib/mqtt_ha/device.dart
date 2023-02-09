@@ -8,6 +8,7 @@ enum DevicePurpose {
   aSolar,
   aThermostat,
   aSensor,
+  aClimate,
   aDoor,
   aLock,
   aAlarmControlPanel,
@@ -133,6 +134,7 @@ class Device {
     if (text.toLowerCase().contains(localeLang('switch'))) return DevicePurpose.aSwitch;
     if (text.toLowerCase().contains(localeLang('lamp'))) return DevicePurpose.aSwitch;
     if (text.toLowerCase().contains(localeLang('plug'))) return DevicePurpose.aSwitch;
+    if (text.toLowerCase().contains(localeLang('climate'))) return DevicePurpose.aClimate;
     if (text.toLowerCase().contains(localeLang('thermostat'))) return DevicePurpose.aThermostat;
     if (text.toLowerCase().contains(localeLang('fan'))) return DevicePurpose.aFan;
     if (text.toLowerCase().contains(localeLang('sensor'))) return DevicePurpose.aSensor;

@@ -57,7 +57,6 @@ class MqttDefaultEntity extends MqttBaseEntity {
           data = _checkTemplate(data, valueTemplate);
         }
         if (tag.endsWith('state_topic')) tag = tag.substring(0, tag.length - 11);
-        // print(_attribPrefix(tag, useEntityTopicTypeinAttrib));
         mqttDevice.addAttribValue(_attribPrefix(tag, useEntityTopicTypeinAttrib), data);
       });
     }
@@ -181,24 +180,54 @@ class MqttDefaultEntity extends MqttBaseEntity {
         (pick(jsonCfg, attribName).asBoolOrNull() ?? defaultName).toString());
   }
 
-  String _checkTemplate(data, template) {
-    if (data.startsWith('{') && template.isNotEmpty) {
-      Map<String, dynamic> jsonMap = Utils.toJsonMap(data);
+  String _checkTemplate(dataIn, template) {
+    String dataOut = dataIn;
+    if (dataIn.startsWith('{') && template.isNotEmpty) {
+      Map<String, dynamic> jsonMap = Utils.toJsonMap(dataIn);
       try {
         var tmpl = jinjaEnv.fromString(template);
-        data = tmpl.render({k_value_json: jsonMap});
+        dataOut = tmpl.render({k_value_json: jsonMap});
+        // print('$dataIn $template ==== $dataOut');
       } catch (e, _) {
-        Utils.logInfo('${e.toString()} template=$template jsonMap = $jsonMap $data');
+        Utils.logInfo('${e.toString()} template=$template jsonMap = $jsonMap $dataOut');
       }
     }
-    return data;
+    return dataOut;
   }
 
   bool _entityHasCfgKey(String tag) => jsonCfg.containsKey(tag);
 
+  String _shortComp(String comp) =>
+      {
+        'alarm_control_panel': 'acp',
+        'binary_sensor': 'bsn',
+        'button': 'btn',
+        'camera': 'cam',
+        'climate': 'cli',
+        'cover': 'cvr',
+        'device_automation': 'dat',
+        'device_tracker': 'trk',
+        'fan': 'fan',
+        'humidifier': 'hum',
+        'light': 'lig',
+        'lock': 'lck',
+        'number': 'num',
+        'scene': 'scn',
+        'siren': 'sir',
+        'select': 'sel',
+        'sensor': 'sns',
+        'switch': 'swt',
+        'tag': 'tag',
+        'text': 'txt',
+        'update': 'upd',
+        'vacuum': 'vac',
+      }[comp] ??
+      comp;
+
   String _attribPrefix(String type, bool useEntityTopicTypeinAttrib) {
     if (useEntityTopicTypeinAttrib) {
-      return Utils.trim('${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_$type', '_');
+      return Utils.trim(
+          '${_shortComp(topicParts.componentNode)}_${topicParts.objectNode ?? topicParts.idNode}_$type', '_');
     } else {
       return Utils.trim('${topicParts.objectNode ?? topicParts.idNode}_$type', '_');
     }
@@ -209,6 +238,8 @@ class MqttDefaultEntity extends MqttBaseEntity {
       if (cfgJsonKey == tag) {
         if (cfgJsonValue is String) {
           _doAttachEventSubscribe(cfgJsonValue, eventCallback);
+        } else {
+          Utils.logInfo('ERROR $cfgJsonValue is ${cfgJsonValue.runtimeType} $cfgJsonKey');
         }
       }
     });
@@ -216,7 +247,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
 
   void _doAttachEventSubscribe(String cfgJsonValue, Function(String) eventCallback) {
     events.on<String>(cfgJsonValue, (data) {
-      // Utils.logInfo('Device: ${mqttDevice.name} Subscribe:$jsonKey $cfgJsonValue $data');
+      // Utils.logInfo('_doAttachEventSubscribe: $cfgJsonValue $data');
       eventCallback(data);
     });
     if (mqttClient.getSubscriptionsStatus(cfgJsonValue) != MqttSubscriptionStatus.active) {
