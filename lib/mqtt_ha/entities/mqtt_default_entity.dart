@@ -22,7 +22,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
 
   @mustCallSuper
   @override
-  void bind(MqttDevice mqttDevice, [bool useEntityTopicTypeinAttrib = false]) {
+  void bind(MqttDevice mqttDevice, bool useEntityTopicTypeinAttrib) {
     mqttDevice.addCapability(topicParts.componentNode);
     mqttDevice.addAttribValue('_purpose', mqttDevice.determinePurpose().toString());
     String hwVersion = pick(jsonCfg, 'device', 'hw_version').asStringOrNull() ?? '';
@@ -47,6 +47,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
           data = _checkTemplate(data, valueTemplate);
         }
         if (tag.endsWith('_topic')) tag = tag.substring(0, tag.length - 6);
+        // print(_attribPrefix(tag, useEntityTopicTypeinAttrib));
         mqttDevice.addAttribValue(_attribPrefix(tag, useEntityTopicTypeinAttrib), data);
       });
     }
@@ -180,7 +181,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
         data = tmpl.render({k_value_json: jsonMap});
       } catch (e, s) {
         print('${e.toString()} template=$template jsonMap = $jsonMap $data');
-        print(s);
+        // print(s);
       }
     }
     return data;

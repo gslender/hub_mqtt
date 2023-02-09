@@ -7,8 +7,8 @@ class MqttSensorEntity extends MqttDefaultEntity {
   String getNameDefault() => 'MQTT Sensor';
 
   @override
-  void bind(MqttDevice mqttDevice, [bool useEntityTopicTypeinAttrib = false]) {
-    super.bind(mqttDevice);
+  void bind(MqttDevice mqttDevice, bool useEntityTopicTypeinAttrib) {
+    super.bind(mqttDevice, useEntityTopicTypeinAttrib);
     addStringEntityAttribute(mqttDevice, 'device_class', 'none', useEntityTopicTypeinAttrib);
     addBoolEntityAttribute(mqttDevice, 'enabled_by_default', true, useEntityTopicTypeinAttrib);
     addStringEntityAttribute(mqttDevice, 'encoding', 'utf-8', useEntityTopicTypeinAttrib);

@@ -33,7 +33,7 @@ abstract class MqttBaseEntity {
   List<String> getCommandTopicTags();
   String getNameDefault();
 
-  void bind(MqttDevice mqttDevice, [bool useEntityTopicTypeinAttrib = false]);
+  void bind(MqttDevice mqttDevice, bool useEntityTopicTypeinAttrib);
 }
 
 class Availability {
