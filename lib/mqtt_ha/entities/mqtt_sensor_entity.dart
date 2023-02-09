@@ -17,5 +17,6 @@ class MqttSensorEntity extends MqttDefaultEntity {
     addBoolEntityAttribute(mqttDevice, 'force_update', false, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'qos', 0, useEntityTopicTypeinAttrib);
     addStringEntityAttribute(mqttDevice, 'state_class', 'none', useEntityTopicTypeinAttrib);
+    addStringEntityAttribute(mqttDevice, 'unit_of_measurement', null, useEntityTopicTypeinAttrib);
   }
 }

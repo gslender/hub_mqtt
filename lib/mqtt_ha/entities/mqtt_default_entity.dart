@@ -45,11 +45,9 @@ class MqttDefaultEntity extends MqttBaseEntity {
         if (_entityHasCfgKey(tagTemplate)) {
           String valueTemplate = pick(jsonCfg, tagTemplate).asStringOrNull() ?? '';
           data = _checkTemplate(data, valueTemplate);
-
-          mqttDevice.addAttribValue(_attribPrefix('state', useEntityTopicTypeinAttrib), data);
-        } else {
-          mqttDevice.addAttribValue(_attribPrefix('state', useEntityTopicTypeinAttrib), data);
         }
+        if (tag.endsWith('_topic')) tag = tag.substring(0, tag.length - 6);
+        mqttDevice.addAttribValue(_attribPrefix(tag, useEntityTopicTypeinAttrib), data);
       });
     }
 
@@ -152,19 +150,22 @@ class MqttDefaultEntity extends MqttBaseEntity {
   }
 
   void addStringEntityAttribute(
-      MqttDevice mqttDevice, String attribName, String defaultName, bool useEntityTopicTypeinAttrib) {
+      MqttDevice mqttDevice, String attribName, String? defaultName, bool useEntityTopicTypeinAttrib) {
+    if (defaultName == null && pick(jsonCfg, attribName).isAbsent) return;
     mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
-        pick(jsonCfg, attribName).asStringOrNull() ?? defaultName);
+        pick(jsonCfg, attribName).asStringOrNull() ?? defaultName ?? '');
   }
 
   void addIntEntityAttribute(
-      MqttDevice mqttDevice, String attribName, int defaultName, bool useEntityTopicTypeinAttrib) {
+      MqttDevice mqttDevice, String attribName, int? defaultName, bool useEntityTopicTypeinAttrib) {
+    if (defaultName == null && pick(jsonCfg, attribName).isAbsent) return;
     mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
         (pick(jsonCfg, attribName).asIntOrNull() ?? defaultName).toString());
   }
 
   void addBoolEntityAttribute(
-      MqttDevice mqttDevice, String attribName, bool defaultName, bool useEntityTopicTypeinAttrib) {
+      MqttDevice mqttDevice, String attribName, bool? defaultName, bool useEntityTopicTypeinAttrib) {
+    if (defaultName == null && pick(jsonCfg, attribName).isAbsent) return;
     mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
         (pick(jsonCfg, attribName).asBoolOrNull() ?? defaultName).toString());
   }
@@ -177,8 +178,9 @@ class MqttDefaultEntity extends MqttBaseEntity {
       Map<String, dynamic> jsonMap = Utils.toJsonMap(data);
       try {
         data = tmpl.render({k_value_json: jsonMap});
-      } catch (e) {
+      } catch (e, s) {
         print('${e.toString()} template=$template jsonMap = $jsonMap $data');
+        print(s);
       }
     }
     return data;
