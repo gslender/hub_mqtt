@@ -22,6 +22,12 @@ class Utils {
     return {};
   }
 
+  static String trim(String str, String trim) {
+    if (str.startsWith(trim)) str = str.substring(trim.length);
+    if (str.endsWith(trim)) str = str.substring(0, str.length - trim.length);
+    return str;
+  }
+
   static String limitString(String payloadStr, int i) =>
       payloadStr.length < i ? payloadStr : '${payloadStr.substring(0, min(i, payloadStr.length))}...';
 

@@ -3,6 +3,7 @@
 import 'package:events_emitter/events_emitter.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_discovery.dart';
+import 'package:jinja/jinja.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
 const String k_value_template = 'value_template';
@@ -23,6 +24,15 @@ abstract class MqttBaseEntity {
   final EventEmitter events;
   final MqttTopicParts topicParts;
   final dynamic jsonCfg;
+  final jinjaEnv = Environment(filters: {
+    'int': (Object? value, {int defaultValue = 0, int base = 10}) {
+      if (value == null) return defaultValue;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) return int.tryParse(value, radix: base) ?? defaultValue;
+      throw TypeError();
+    }
+  });
   List<Availability> availabilityList = [];
 
   List<String> getStateTopicTags();

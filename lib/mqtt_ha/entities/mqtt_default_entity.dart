@@ -4,7 +4,6 @@ import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
 import 'package:hub_mqtt/mqtt_ha/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
-import 'package:jinja/jinja.dart';
 
 class MqttDefaultEntity extends MqttBaseEntity {
   String payloadAvailable = k_online;
@@ -184,15 +183,12 @@ class MqttDefaultEntity extends MqttBaseEntity {
 
   String _checkTemplate(data, template) {
     if (data.startsWith('{') && template.isNotEmpty) {
-      // using templates !!
-      var env = Environment();
-      var tmpl = env.fromString(template);
       Map<String, dynamic> jsonMap = Utils.toJsonMap(data);
       try {
+        var tmpl = jinjaEnv.fromString(template);
         data = tmpl.render({k_value_json: jsonMap});
-      } catch (e, s) {
-        print('${e.toString()} template=$template jsonMap = $jsonMap $data');
-        // print(s);
+      } catch (e, _) {
+        Utils.logInfo('${e.toString()} template=$template jsonMap = $jsonMap $data');
       }
     }
     return data;
@@ -201,11 +197,10 @@ class MqttDefaultEntity extends MqttBaseEntity {
   bool _entityHasCfgKey(String tag) => jsonCfg.containsKey(tag);
 
   String _attribPrefix(String type, bool useEntityTopicTypeinAttrib) {
-    if (type.isNotEmpty) type = '_$type';
     if (useEntityTopicTypeinAttrib) {
-      return '${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}$type';
+      return Utils.trim('${topicParts.componentNode}_${topicParts.objectNode ?? topicParts.idNode}_$type', '_');
     } else {
-      return '${topicParts.objectNode ?? topicParts.idNode}$type';
+      return Utils.trim('${topicParts.objectNode ?? topicParts.idNode}_$type', '_');
     }
   }
 
