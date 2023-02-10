@@ -1,8 +1,8 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:events_emitter/events_emitter.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_discovery.dart';
+import '/services/mqtt_ha/mqtt_device.dart';
+import '/services/mqtt_ha/mqtt_discovery.dart';
 import 'package:jinja/jinja.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 

@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:hub_mqtt/mqtt_ha/device.dart';
-import 'package:hub_mqtt/device_attributes_widget.dart';
-import 'package:hub_mqtt/device_commands_widget.dart';
-import 'package:hub_mqtt/mqtt_ha/enums.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_discovery.dart';
+import '/model/device.dart';
+import '/device_attributes_widget.dart';
+import '/device_commands_widget.dart';
+import '/services/mqtt_ha/mqtt_device.dart';
+import '/services/mqtt_ha/mqtt_discovery.dart';
 import 'package:json_view/json_view.dart';
 
 const String apptitle = 'hub_mqtt';
+
+enum AppStatus {
+  none,
+  failed,
+  connecting,
+  connected,
+  notauthorised,
+}
 
 void main() {
   runApp(MaterialApp(

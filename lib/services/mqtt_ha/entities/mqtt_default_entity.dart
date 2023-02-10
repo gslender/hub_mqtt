@@ -1,8 +1,8 @@
 import 'package:deep_pick/deep_pick.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
-import 'package:hub_mqtt/mqtt_ha/utils.dart';
+import '/services/mqtt_ha/entities/mqtt_base_entity.dart';
+import '/services/mqtt_ha/mqtt_device.dart';
+import '/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 
 class MqttDefaultEntity extends MqttBaseEntity {
@@ -200,7 +200,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
         dataOut = tmpl.render({k_value_json: jsonMap});
         // print('$dataIn $template ==== $dataOut');
       } catch (e, _) {
-        Utils.logInfo('${e.toString()} template=$template jsonMap = $jsonMap $dataOut');
+        Utils.loginfo('${e.toString()} template=$template jsonMap = $jsonMap $dataOut');
       }
     }
     return dataOut;
@@ -250,7 +250,7 @@ class MqttDefaultEntity extends MqttBaseEntity {
         if (cfgJsonValue is String) {
           _doAttachEventSubscribe(cfgJsonValue, eventCallback);
         } else {
-          Utils.logInfo('ERROR $cfgJsonValue is ${cfgJsonValue.runtimeType} $cfgJsonKey');
+          Utils.loginfo('ERROR $cfgJsonValue is ${cfgJsonValue.runtimeType} $cfgJsonKey');
         }
       }
     });

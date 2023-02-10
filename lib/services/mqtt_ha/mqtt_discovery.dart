@@ -1,21 +1,21 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_binary_sensor_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_sensor_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_camera_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_climate_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_cover_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_fan_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_light_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_lock_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_switch_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_tag_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/ha_const.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
-import 'package:hub_mqtt/mqtt_ha/utils.dart';
+import '/services/mqtt_ha/entities/mqtt_base_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_binary_sensor_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_sensor_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_camera_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_climate_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_cover_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_default_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_fan_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_light_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_lock_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_switch_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_tag_entity.dart';
+import '/services/mqtt_ha/ha_const.dart';
+import '/services/mqtt_ha/mqtt_device.dart';
+import '/utils.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:events_emitter/events_emitter.dart';
@@ -52,7 +52,7 @@ class MqttDiscovery {
     mqttClient!.connectTimeoutPeriod = 1000;
     // client.secure = true; // does not work and peer resets connection
     mqttClient!.connect(username, password).then((status) {
-      Utils.logInfo('$clientId MqttClientConnectionStatus=$status');
+      Utils.loginfo('$clientId MqttClientConnectionStatus=$status');
       if (status == null) return;
       connectionStatus = status;
       switch (status.state) {
@@ -101,7 +101,7 @@ class MqttDiscovery {
       }
     }, onError: (_) {
       var connectionStatus = mqttClient!.connectionStatus;
-      Utils.logInfo('$clientId $connectionStatus');
+      Utils.loginfo('$clientId $connectionStatus');
       if (connectionStatus == null) return;
       if (connectionStatus.returnCode == MqttConnectReturnCode.notAuthorized) {
         if (notAuthorizedCallback != null) notAuthorizedCallback();

@@ -3,14 +3,14 @@ import 'dart:math';
 
 class Utils {
   // ignore: avoid_print
-  static logInfo(String msg) => print(msg);
+  static loginfo(String msg) => print(msg);
   static bool isValidJson(String? jsonString, [bool debug = false]) {
     if (jsonString == null) return false;
     try {
       json.decode(jsonString) as Map<String, dynamic>;
       return true;
     } catch (e) {
-      if (debug) logInfo(e.toString());
+      if (debug) loginfo(e.toString());
     }
     return false;
   }

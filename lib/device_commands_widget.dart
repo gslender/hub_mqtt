@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
+import '/services/mqtt_ha/mqtt_device.dart';
 
 class DeviceCommandsWidget extends StatefulWidget {
   const DeviceCommandsWidget({super.key, required this.selectedDevice});

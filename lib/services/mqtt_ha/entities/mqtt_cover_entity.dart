@@ -1,7 +1,7 @@
 import 'package:deep_pick/deep_pick.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
-import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_default_entity.dart';
+import '/services/mqtt_ha/mqtt_device.dart';
+import '/services/mqtt_ha/entities/mqtt_base_entity.dart';
 
 class MqttCoverEntity extends MqttDefaultEntity {
   String payloadClose = k_CLOSE;

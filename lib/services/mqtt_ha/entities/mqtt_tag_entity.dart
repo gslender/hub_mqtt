@@ -1,4 +1,4 @@
-import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
+import '/services/mqtt_ha/entities/mqtt_default_entity.dart';
 
 class MqttTagEntity extends MqttDefaultEntity {
   MqttTagEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
