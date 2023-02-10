@@ -17,8 +17,8 @@ const String k_availability_template = 'availability_template';
 const String k_availability = 'availability';
 const String k_availability_mode = 'availability_mode';
 
-const String k_on = 'ON';
-const String k_off = 'OFF';
+const String k_ON = 'ON';
+const String k_OFF = 'OFF';
 const String k_LOCK = 'CLOSE';
 const String k_UNLOCK = 'OPEN';
 const String k_CLOSE = 'CLOSE';
@@ -41,13 +41,15 @@ const String k_payload_lock = 'payload_lock';
 const String k_payload_unlock = 'payload_unlock';
 const String k_payload_close = 'payload_close';
 const String k_payload_open = 'payload_open';
+const String k_payload_stop = 'payload_stop';
+
+const String k_state_off = 'state_off';
+const String k_state_on = 'state_on';
 const String k_state_jammed = 'state_jammed';
 const String k_state_locked = 'state_locked';
 const String k_state_locking = 'state_locking';
 const String k_state_unlocked = 'state_unlocked';
 const String k_state_unlocking = 'state_unlocking';
-
-const String k_payload_stop = 'payload_stop';
 const String k_state_closed = 'state_closed';
 const String k_state_closing = 'state_closing';
 const String k_state_open = 'state_open';

@@ -4,8 +4,8 @@ import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
 
 class MqttBinarySensorEntity extends MqttDefaultEntity {
-  String payloadOn = k_on;
-  String payloadOff = k_off;
+  String payloadOn = k_ON;
+  String payloadOff = k_OFF;
   int? offDelay;
 
   MqttBinarySensorEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
@@ -20,8 +20,8 @@ class MqttBinarySensorEntity extends MqttDefaultEntity {
     addBoolEntityAttribute(mqttDevice, 'force_update', false, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'qos', 0, useEntityTopicTypeinAttrib);
 
-    payloadOn = pick(jsonCfg, k_payload_on).asStringOrNull() ?? k_on;
-    payloadOff = pick(jsonCfg, k_payload_off).asStringOrNull() ?? k_off;
+    payloadOn = pick(jsonCfg, k_payload_on).asStringOrNull() ?? k_ON;
+    payloadOff = pick(jsonCfg, k_payload_off).asStringOrNull() ?? k_OFF;
     offDelay = pick(jsonCfg, 'off_delay').asIntOrNull();
   }
 }

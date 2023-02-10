@@ -11,6 +11,7 @@ import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/entities/mqtt_fan_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/entities/mqtt_light_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/entities/mqtt_lock_entity.dart';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_switch_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/entities/mqtt_tag_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/ha_const.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
@@ -232,6 +233,9 @@ class MqttDiscovery {
       case 'sensor':
         topicParts.entity = MqttSensorEntity(mqttClient!, events, topicParts, jsonCfg);
         break;
+      case 'switch':
+        topicParts.entity = MqttSwitchEntity(mqttClient!, events, topicParts, jsonCfg);
+        break;
       case 'alarm_control_panel':
       case 'button':
       case 'device_automation':
@@ -241,7 +245,6 @@ class MqttDiscovery {
       case 'scene':
       case 'siren':
       case 'select':
-      case 'switch':
       case 'text':
       case 'update':
       case 'vacuum':
