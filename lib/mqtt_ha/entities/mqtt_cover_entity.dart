@@ -13,6 +13,11 @@ class MqttCoverEntity extends MqttDefaultEntity {
   String stateOpening = k_opening;
   String stateStopped = k_stopped;
 
+  MqttCoverEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
+
+  @override
+  String getNameDefault() => 'MQTT Cover';
+
   @override
   List<String> getStateTopicTags() => [
         'state_topic',
@@ -25,8 +30,6 @@ class MqttCoverEntity extends MqttDefaultEntity {
         'position_topic': 'position_template',
         'tilt_status_topic': 'tilt_status_template',
       };
-
-  MqttCoverEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
   void bind(MqttDevice mqttDevice, bool useEntityTopicTypeinAttrib) {

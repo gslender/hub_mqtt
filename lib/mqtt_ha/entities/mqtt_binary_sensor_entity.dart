@@ -9,6 +9,7 @@ class MqttBinarySensorEntity extends MqttDefaultEntity {
   int? offDelay;
 
   MqttBinarySensorEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
+
   @override
   String getNameDefault() => 'MQTT Binary Sensor';
 

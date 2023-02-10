@@ -3,6 +3,7 @@ import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
 
 class MqttSensorEntity extends MqttDefaultEntity {
   MqttSensorEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
+
   @override
   String getNameDefault() => 'MQTT Sensor';
 

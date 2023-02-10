@@ -177,6 +177,13 @@ class MqttDefaultEntity extends MqttBaseEntity {
         (pick(jsonCfg, attribName).asIntOrNull() ?? defaultName).toString());
   }
 
+  void addDoubleEntityAttribute(
+      MqttDevice mqttDevice, String attribName, double? defaultName, bool useEntityTopicTypeinAttrib) {
+    if (defaultName == null && pick(jsonCfg, attribName).isAbsent) return;
+    mqttDevice.addAttribValue(_attribPrefix(attribName, useEntityTopicTypeinAttrib),
+        (pick(jsonCfg, attribName).asDoubleOrNull() ?? defaultName).toString());
+  }
+
   void addBoolEntityAttribute(
       MqttDevice mqttDevice, String attribName, bool? defaultName, bool useEntityTopicTypeinAttrib) {
     if (defaultName == null && pick(jsonCfg, attribName).isAbsent) return;

@@ -13,25 +13,23 @@ class MqttLockEntity extends MqttDefaultEntity {
   String stateUnlocked = k_UNLOCKED;
   String stateUnlocking = k_UNLOCKING;
 
+  MqttLockEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
+
+  @override
+  String getNameDefault() => 'MQTT Lock';
+
   @override
   List<String> getStateTopicTags() => [
         'state_topic',
-        'position_topic',
-        'tilt_status_topic',
       ];
   @override
   Map<String, String> getStateTopicTemplateTags() => {
-        'state_topic': 'state_value_template',
-        'position_topic': 'position_template',
-        'tilt_status_topic': 'tilt_status_template',
+        'state_topic': 'value_template',
       };
-
-  MqttLockEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
   void bind(MqttDevice mqttDevice, bool useEntityTopicTypeinAttrib) {
     super.bind(mqttDevice, useEntityTopicTypeinAttrib);
-    addStringEntityAttribute(mqttDevice, 'code_format', 'none', useEntityTopicTypeinAttrib);
 
     payloadLock = pick(jsonCfg, k_payload_lock).asStringOrNull() ?? k_LOCK;
     payloadUnlock = pick(jsonCfg, k_payload_unlock).asStringOrNull() ?? k_UNLOCK;
@@ -42,6 +40,7 @@ class MqttLockEntity extends MqttDefaultEntity {
     stateUnlocked = pick(jsonCfg, k_state_unlocked).asStringOrNull() ?? k_UNLOCKED;
     stateUnlocking = pick(jsonCfg, k_state_unlocking).asStringOrNull() ?? k_UNLOCKING;
 
+    addStringEntityAttribute(mqttDevice, 'code_format', 'none', useEntityTopicTypeinAttrib);
     addBoolEntityAttribute(mqttDevice, 'optimistic', false, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'position_closed', 0, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'position_open', 100, useEntityTopicTypeinAttrib);

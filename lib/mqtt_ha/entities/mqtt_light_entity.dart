@@ -4,6 +4,9 @@ class MqttLightEntity extends MqttDefaultEntity {
   MqttLightEntity(super.mqttClient, super.events, super.topicParts, super.jsonCfg);
 
   @override
+  String getNameDefault() => 'MQTT Light';
+
+  @override
   List<String> getStateTopicTags() => [
         'state_topic',
         'brightness_state_topic',
