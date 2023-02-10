@@ -146,11 +146,13 @@ class MqttDiscovery {
     } else {
       // create new device
       String name = pick(jsonCfg, 'device', 'name').asStringOrNull() ?? topicParts.entity?.getNameDefault() ?? '';
+      String room = pick(jsonCfg, 'device', 'suggested_area').asStringOrNull() ?? '';
       mqttDevice = MqttDevice(
         id: id,
         name: name,
         type: '',
         label: '',
+        room: room,
       );
       mqttDevice.addTopicCfgJson(topicParts, jsonCfg);
       _mapDevices[id] = mqttDevice;

@@ -37,6 +37,10 @@ class MqttDefaultEntity extends MqttBaseEntity {
     if (model.isNotEmpty) mqttDevice.addAttribValue('device_model', model);
     String cfgUrl = pick(jsonCfg, 'device', 'configuration_url').asStringOrNull() ?? '';
     if (cfgUrl.isNotEmpty) mqttDevice.addAttribValue('device_configuration_url', cfgUrl);
+    String connections = pick(jsonCfg, 'device', 'connections').asStringOrNull() ?? '';
+    if (connections.isNotEmpty) mqttDevice.addAttribValue('device_connections', connections);
+    String viaDevice = pick(jsonCfg, 'device', 'via_device').asStringOrNull() ?? '';
+    if (viaDevice.isNotEmpty) mqttDevice.addAttribValue('device_via_device', viaDevice);
 
     //////////////////////////////////////
     // add common attributes

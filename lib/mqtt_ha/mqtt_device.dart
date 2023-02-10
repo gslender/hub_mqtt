@@ -10,7 +10,8 @@ class MqttDevice extends Device {
     required String name,
     required String label,
     required String type,
-  }) : super(id: id, name: name, label: label, type: type);
+    String room = '',
+  }) : super(id: id, name: name, label: label, type: type, room: room);
 
   final Map<MqttTopicParts, dynamic> _topicCfgs = {};
 

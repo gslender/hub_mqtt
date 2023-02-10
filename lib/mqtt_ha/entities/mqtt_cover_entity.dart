@@ -1,18 +1,7 @@
-// ignore_for_file: constant_identifier_names
 import 'package:deep_pick/deep_pick.dart';
 import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
-
-const String k_CLOSE = 'CLOSE';
-const String k_OPEN = 'OPEN';
-const String k_STOP = 'STOP';
-const String k_closed = 'closed';
-const String k_closing = 'closing';
-const String k_open = 'open';
-const String k_opening = 'opening';
-const String k_stopped = 'stopped';
-const String k_payload_close = 'payload_close';
-const String k_payload_open = 'payload_open';
+import 'package:hub_mqtt/mqtt_ha/entities/mqtt_base_entity.dart';
 
 class MqttCoverEntity extends MqttDefaultEntity {
   String payloadClose = k_CLOSE;
@@ -44,12 +33,12 @@ class MqttCoverEntity extends MqttDefaultEntity {
     super.bind(mqttDevice, useEntityTopicTypeinAttrib);
     payloadClose = pick(jsonCfg, k_payload_close).asStringOrNull() ?? k_CLOSE;
     payloadOpen = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_OPEN;
-    payloadStop = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_STOP;
-    stateClosed = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_closed;
-    stateClosing = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_closing;
-    stateOpen = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_open;
-    stateOpening = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_opening;
-    stateStopped = pick(jsonCfg, k_payload_open).asStringOrNull() ?? k_stopped;
+    payloadStop = pick(jsonCfg, k_payload_stop).asStringOrNull() ?? k_STOP;
+    stateClosed = pick(jsonCfg, k_state_closed).asStringOrNull() ?? k_closed;
+    stateClosing = pick(jsonCfg, k_state_closing).asStringOrNull() ?? k_closing;
+    stateOpen = pick(jsonCfg, k_state_open).asStringOrNull() ?? k_open;
+    stateOpening = pick(jsonCfg, k_state_opening).asStringOrNull() ?? k_opening;
+    stateStopped = pick(jsonCfg, k_state_stopped).asStringOrNull() ?? k_stopped;
     addBoolEntityAttribute(mqttDevice, 'optimistic', false, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'position_closed', 0, useEntityTopicTypeinAttrib);
     addIntEntityAttribute(mqttDevice, 'position_open', 100, useEntityTopicTypeinAttrib);
