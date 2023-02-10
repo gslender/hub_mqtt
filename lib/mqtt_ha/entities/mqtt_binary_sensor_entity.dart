@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import 'package:deep_pick/deep_pick.dart';
 import 'package:hub_mqtt/mqtt_ha/entities/mqtt_default_entity.dart';
 import 'package:hub_mqtt/mqtt_ha/mqtt_device.dart';
