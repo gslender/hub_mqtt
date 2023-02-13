@@ -160,7 +160,7 @@ class _HubMQTTState extends State<HubMQTT> {
         return const Icon(Icons.label);
       case DevicePurpose.aClimate:
         return const Icon(Icons.device_thermostat);
-      case DevicePurpose.aBlind:
+      case DevicePurpose.aCover:
         return const Icon(Icons.door_sliding);
       case DevicePurpose.aUpdate:
         return const Icon(Icons.update);

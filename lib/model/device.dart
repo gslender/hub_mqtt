@@ -15,6 +15,7 @@ enum DevicePurpose {
   aAlarmControlPanel,
   aBinarySensor,
   aCamera,
+  aCover,
   aButton,
   aDeviceAutomation,
   aDeviceTracker,
